@@ -1,0 +1,71 @@
+Continue and finish the NRSA migration so the app uses **Supabase** for both database and file storage (remove Cloudinary entirely), and fix the Media page UX so uploads and external links behave correctly.
+
+Constraints:
+- Do **not** change any frontend design, colors, or layout. Only update logic and integration.
+- Preserve the existing admin user, data and table names.
+- Work in both source TypeScript files and regenerate `dist` if necessary.
+
+Tasks (in order):
+
+1. Replace Cloudinary usage with Supabase Storage:
+   - Update server Supabase client file (e.g. `server/lib/supabase.ts`) to export a `supabase` client using `process.env.SUPABASE_URL` and `process.env.SUPABASE_SERVICE_ROLE_KEY`.
+   - Replace the Cloudinary upload route(s) with Supabase Storage upload logic. Use a bucket named `public`. The upload endpoint should:
+     - Accept multipart form file (multer memory storage).
+     - Upload file to `public/uploads/<timestamp>-<originalname>`.
+     - Return `{ url: publicUrl }` where `publicUrl` = `supabase.storage.from('public').getPublicUrl(path).data.publicUrl`.
+   - Remove Cloudinary SDK import and references entirely.
+
+2. Change media creation/update logic to support two modes:
+   - **Upload mode** (file present): upload file to Supabase and set `imageUrl` to the public URL, and set `isExternal = false`, `thumbnailUrl = NULL`.
+   - **External link mode** (client sends `externalUrl`): save `imageUrl` (or `link`) as that external URL, set `isExternal = true`, and set `thumbnailUrl`:
+     - If the external URL is YouTube (`youtube.com` or `youtu.be`), set `thumbnailUrl` to `https://img.youtube.com/vi/<VIDEO_ID>/hqdefault.jpg`.
+     - Otherwise `thumbnailUrl` may be null (or a generic icon url).
+   - Ensure the DB columns exist: `is_external` (boolean default false) and `thumbnail_url` (text nullable). If missing, run an SQL migration to add them without dropping data.
+
+3. Backend API: update `POST /api/media` and `PATCH /api/media/:id`:
+   - Accept either `multipart/form-data` (file) or JSON with `{ externalUrl: "https://..." , title, description, category }`.
+   - Server should detect file vs externalUrl and act accordingly.
+   - Return the created/updated media object with `id, title, imageUrl (or link), thumbnailUrl, isExternal`.
+
+4. Frontend media list / media item component:
+   - Detect `isExternal` flag.
+   - If `isExternal === false`: render the `imageUrl` as an `<img>` inline (uploaded image).
+   - If `isExternal === true`:
+     - If `thumbnailUrl` exists, render it as a thumbnail `<img>` (small card).
+     - Render a button under the thumbnail that says **Watch** or **Open** (same style as current UI buttons). The button opens the `imageUrl` in a new tab (`target="_blank" rel="noopener noreferrer"`).
+     - Do not change styles — use existing button component or class names.
+   - If `imageUrl` is an external non-YouTube link and there is no thumbnail, show a small link preview (title + Open button) — keep styling consistent with current list items.
+
+5. DB migration SQL:
+   - If `is_external` or `thumbnail_url` do not exist, run:
+     ```sql
+     ALTER TABLE media
+       ADD COLUMN IF NOT EXISTS is_external boolean NOT NULL DEFAULT false;
+
+     ALTER TABLE media
+       ADD COLUMN IF NOT EXISTS thumbnail_url text;
+     ```
+   - If admin user needs insertion (only if missing), insert with `protected = true` — do not overwrite existing.
+
+6. Tests to run (automate if possible):
+   - Upload an image via `POST /api/media` (multipart/form-data) => returns `imageUrl` accessible and appears on frontend list as inline image.
+   - Create media with JSON `{ externalUrl: "https://youtu.be/..." }` => returns `thumbnailUrl` pointing to `img.youtube.com` and frontend shows thumb + Watch button that opens YouTube.
+   - Create media with JSON external non-YouTube link => frontend shows link preview + Open button.
+
+7. Clean up:
+   - Remove Cloudinary and any unused storage config from project and package.json.
+   - Update README with new upload instructions and a note that bucket `public` must exist in Supabase.
+   - Ensure production build works: `npm run build` and `node dist/index.js` without Cloudinary errors.
+
+Code snippets to use (replace target files accordingly):
+
+A) server/lib/supabase.ts
+```ts
+import { createClient } from '@supabase/supabase-js';
+if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  throw new Error('SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set');
+}
+export const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);

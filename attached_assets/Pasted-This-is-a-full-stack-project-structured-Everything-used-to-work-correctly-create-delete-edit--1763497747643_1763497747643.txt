@@ -1,0 +1,117 @@
+This is a full-stack project structured
+
+Everything used to work correctly: create, delete, edit, update — and the UI always reflected the new data.
+
+But now, after switching to Supabase + Render, this problem started:
+
+❌ THE PROBLEM
+
+When I delete/update/create an item:
+
+The API returns success (e.g., “Item deleted”).
+
+The DB is actually updated (record is deleted).
+
+BUT the frontend still shows OLD DATA, even after page refresh.
+
+Only when I redeploy or restart the Render server do the changes finally appear on the frontend.
+
+So the issue is server caching / stale UI / stale fetch.
+
+This affects all routes
+
+🎯 WHAT I WANT YOU TO DO
+
+Help me fix this in the cleanest, most stable way.
+
+Please:
+
+1. Inspect all the following:
+data fetching methods I might be using
+
+Any static rendering (getStaticProps)
+
+Any server or client caching
+
+Any Render caching
+
+Any implicit Next.js caching
+
+Any Express route caching
+
+Any Supabase cache/latency issues
+
+React Query/SWR stale cache (if used)
+
+2. Then implement the correct fix, which may include:
+
+Changing getStaticProps → getServerSideProps
+
+Adding correct headers like:
+
+res.setHeader("Cache-Control", "no-store")
+
+
+Invalidating React Query cache after mutation
+
+Ensuring Express routes send:
+
+res.set("Cache-Control", "no-store");
+
+
+Ensuring frontend fetch uses:
+
+{ cache: "no-store" }
+
+
+Ensuring Supabase queries are not cached
+
+Ensuring Vite/Next.js dev cache is not affecting API
+
+3. Update all relevant files:
+
+API routes
+
+Next.js pages
+
+Frontend fetch functions
+
+Admin CRUD functions
+
+4. Write the corrected code for:
+
+Delete API route
+
+Update API route
+
+Create API route
+
+Frontend fetch
+
+Admin Panel CRU/D functions
+
+Next.js pages using live data
+
+Any cache invalidation logic
+
+5. After writing code, explain:
+
+Why the old behavior caused stale data
+
+Why the new changes fix the problem
+
+How to avoid this issue in the future with Render + Supabase + Next.js
+
+If I should use SSR or ISR
+
+Whether I need to disable caching globally
+
+📌 EXTRA: PLAYER RANKING LINK
+
+I also want to replace the “Players” card on the homepage with a direct link to:
+
+https://skippers.nrsa.com.ng
+
+I want Replit AI to modify the component so that clicking that card opens that ranking portal.
+
+NOW produce the complete fix with exact file changes, explanations, and final working code.

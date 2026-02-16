@@ -1,0 +1,19 @@
+# Render.com Backend Deployment
+
+## Quick Deploy:
+1. Connect GitHub repo to Render
+2. Use `render-backend.yaml` configuration
+3. Add environment variables:
+
+```
+NODE_ENV=production
+JWT_SECRET=cH/Wxyt4BAFNjDX2SH3+DORtmLujHILTH3JePhxuth/gOfU7w5/nFqmbmVeDjajC+DC6BjZ9Ftapm2RDKC9QXA==
+SUPABASE_URL=https://jrijjoszmlupeljifedk.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpyaWpqb3N6bWx1cGVsamlmZWRrIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2Mjk1OTY0NCwiZXhwIjoyMDc4MzE5NjQ0fQ.aeu4qY6PciJfNd95Z-zTSHcSJYrixiTVlkRlUycGYvY
+SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpyaWpqb3N6bWx1cGVsamlmZWRrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5NTk2NDQsImV4cCI6MjA3ODMxOTY0NH0.b0L7IYH0iYtPkXuH-R5WOgU_R3ifFNaQjKR7-WJJfH4
+DATABASE_URL=postgresql://postgres:Holiness%232025%21@db.jrijjoszmlupeljifedk.supabase.co:5432/postgres
+ADMIN_EMAIL=admin@nrsa.com.ng
+ADMIN_PASSWORD=adminnrsa.passme5@00121
+ADMIN_NAME=NRSA Administrator
+```
+5. Deploy

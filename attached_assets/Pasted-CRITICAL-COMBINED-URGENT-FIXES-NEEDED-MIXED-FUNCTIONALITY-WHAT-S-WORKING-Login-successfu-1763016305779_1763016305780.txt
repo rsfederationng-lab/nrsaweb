@@ -1,0 +1,50 @@
+CRITICAL: COMBINED URGENT FIXES NEEDED - MIXED FUNCTIONALITY
+
+✅ WHAT'S WORKING:
+- Login successful
+- News CRUD working (including images displaying)
+- Contact form working
+- Media creation working (but thumbnails broken)
+- Basic uploads working
+
+🚨 WHAT'S STILL BROKEN:
+
+1. **Events API** - 400 Bad Request error
+2. **Member States** - Edit shows empty form, logo not displaying on frontend
+3. **Media** - YouTube thumbnails not generating, external links broken
+4. **Leaders** - Uploaded images not displaying, update removes existing image
+5. **Clubs** - Not creating at all
+6. **Players** - Images not displaying, update doesn't show existing data
+7. **All Edit Forms** - Not pre-populating with existing data
+8. **IMAGE DISPLAY PIPELINE BROKEN** - Uploaded images not showing in frontend (except news)
+
+🎯 ROOT CAUSE ANALYSIS:
+- News images work → Other images should work too
+- Upload succeeds → But frontend display fails
+- Edit forms empty → Data not being fetched properly
+
+🔧 REQUIRED COMPLETE FIXES:
+
+PHASE 1: FIX DATA FLOW
+1. **Fix Events API** - Resolve 400 Bad Request
+2. **Fix All Edit Forms** - Pre-populate with existing data including images
+3. **Fix Clubs Creation** - Make clubs create properly
+
+PHASE 2: FIX IMAGE SYSTEM
+4. **Fix Image Display Pipeline** - Upload → Store URL → API returns URL → Frontend displays
+5. **Verify Image URLs** - Check database storage and frontend retrieval
+6. **Fix YouTube Thumbnails** - Generate and display for external media
+
+PHASE 3: COMPREHENSIVE TESTING
+7. **Test ALL CRUD Operations** - Create, Read, Update, Delete for every entity
+8. **Test ALL Image Uploads** - Ensure upload → storage → display works end-to-end
+9. **Verify Data Persistence** - Changes must survive page refresh
+
+🎯 PRIORITY ORDER:
+1. Fix Events API (blocking)
+2. Fix Image Display (critical user experience)
+3. Fix Edit Forms (admin usability)
+4. Fix YouTube Thumbnails (media functionality)
+5. Fix Clubs Creation (missing feature)
+
+NO MORE PARTIAL FIXES. Since News images work, use that as reference to fix ALL other image displays. Test and fix EVERY component completely end-to-end.

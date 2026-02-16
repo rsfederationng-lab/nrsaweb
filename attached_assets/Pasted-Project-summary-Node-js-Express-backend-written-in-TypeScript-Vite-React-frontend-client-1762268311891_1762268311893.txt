@@ -1,0 +1,62 @@
+Project summary:
+- Node.js + Express backend written in TypeScript
+- Vite + React frontend (client)
+- Current problems: TypeScript build errors, import/export mismatches, routes registered before app creation, logging middleware type errors, top-level await/DEV vs PROD issues, and frontend fetches receiving HTML (Unexpected token '<') because API routes are not being handled properly in production.
+- Goal: produce a clean, production-ready backend build for cPanel that compiles with `tsc -p tsconfig.backend.json` and runs as `node dist/index.js`.
+
+Deliverables:
+1. A corrected backend codebase (TypeScript) that compiles without errors to `dist/`.
+2. `dist/index.js` must be the startup file for cPanel.
+3. A cleaned `server/index.ts` (no route registration before `app` is created, `setupVite` only used in dev, `serveStatic` used in prod).
+4. A corrected `vite`/`vite.ts` (or `vite.js`) that supports dev middleware and production static serving (SPA fallback must *not* catch `/api/*`).
+5. Ensure all API routes are under `/api/*` and return JSON (no HTML).
+6. A final `package.json` scripts section with at least:
+   - `"build:backend": "tsc -p tsconfig.backend.json"`
+   - `"start:backend": "node dist/index.js"`
+7. A short README with exact cPanel deployment steps and verification commands (curl examples).
+8. A quick checklist of local tests to run and expected outputs.
+
+Fix instructions (be explicit and conservative — **do not** change frontend client behavior except to update fetch base URL if needed):
+
+A. TypeScript / tsconfig/backend
+- Create/ensure `tsconfig.backend.json` targets Node-compatible JS and CommonJS for cPanel:
+  - `compilerOptions.module` => `"CommonJS"`
+  - `compilerOptions.target` => at least `"ES2020"` (or a target supported by host Node)
+  - `outDir` => `"./dist"`
+  - `rootDir` => `"./server"` (or where backend .ts files live)
+  - Remove `allowImportingTsExtensions` and other ESM-only flags.
+- `include` should only include backend sources (e.g., `["server/**/*", "shared/**/*"]`) and ensure `rootDir` contains them.
+
+B. package.json
+- Ensure `"type": "commonjs"` or remove `"type"` so `tsc` emits CommonJS JS.
+- Add scripts:
+  - `"build:backend": "tsc -p tsconfig.backend.json"`
+  - `"start:backend": "node dist/index.js"`
+  - Keep frontend build (`"build:frontend": "vite build"`) unchanged.
+- Add `"engines"` field optional (Node version used on cPanel) if helpful.
+
+C. server/index.ts (the startup file)
+- Structure should be strictly:
+  1. imports
+  2. `const app = express();` (create app)
+  3. middleware (express.json, rateLimit, logging middleware)
+  4. register routes: `registerAuthRoutes(app); registerUploadRoutes(app); registerAllRoutes(app);`
+  5. error handler
+  6. `const server = createServer(app);`
+  7. if `NODE_ENV === "development"` -> `await setupVite(app, server)` (use async IIFE or function to avoid top-level await in builds if target node < 18)
+     else -> `serveStatic(app);`
+  8. `server.listen(...)` and export `server`.
+- Remove any duplicate imports (e.g., do not import `registerAllRoutes` twice). If there are two different route modules, name them distinctly (`registerClientRoutes`, `registerApiRoutes`) and import accordingly.
+
+D. Logging middleware
+- Do not reassign `res.json` with mismatched types.
+- Use this pattern:
+
+```ts
+const originalJson = res.json.bind(res);
+let jsonResponse: any = undefined;
+
+res.json = function (body: any) {
+  jsonResponse = body;
+  return originalJson(body);
+};
