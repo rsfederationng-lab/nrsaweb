@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic';
 import React from "react";
 
 // Force cache bust - update this timestamp when deploying
+// Last deployed: 2026-02-16 20:42 WAT
 const BUILD_TIMESTAMP = Date.now();
 import { HeroCarousel } from "@/components/HeroCarousel";
 import { Link } from "wouter";
