@@ -608,7 +608,15 @@ export function registerAllRoutes(app: Express): void {
 
   app.get("/api/debug/email", requireAdmin, async (req, res) => {
     const result = await verifyEmailConnection();
-    res.json(result);
+    res.json({
+      ...result,
+      env: {
+        NODE_ENV: process.env.NODE_ENV,
+        HAS_EMAIL_USER: !!process.env.EMAIL_USER,
+        HAS_EMAIL_PASSWORD: !!process.env.EMAIL_PASSWORD,
+        EMAIL_USER_VALUE: process.env.EMAIL_USER || "USING DEFAULT (rsfederationng@gmail.com)"
+      }
+    });
   });
 
   app.get("/api/contacts", requireAdmin, async (req, res) => {

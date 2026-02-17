@@ -79,7 +79,17 @@ export const news = pgTable("news", {
 });
 
 export const insertNewsSchema = createInsertSchema(news, {
-  publishedAt: z.union([z.date(), z.string().transform((str) => new Date(str))]).optional(),
+  publishedAt: z.union([
+    z.date(),
+    z.string().transform((str, ctx) => {
+      const d = new Date(str);
+      if (isNaN(d.getTime())) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Invalid date format" });
+        return z.NEVER;
+      }
+      return d;
+    })
+  ]).optional(),
 }).omit({
   id: true,
   createdAt: true,

@@ -1,11 +1,13 @@
 import nodemailer from "nodemailer";
 
 // Create reusable transporter object using the default SMTP transport
+// Create reusable transporter object using the default SMTP transport
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
     user: process.env.EMAIL_USER || "rsfederationng@gmail.com",
-    pass: process.env.EMAIL_PASSWORD, // This must be set in .env
+    // Google App Passwords often have spaces when copied, but must be sent without them
+    pass: (process.env.EMAIL_PASSWORD || "").replace(/\s+/g, ""),
   },
 });
 
@@ -109,21 +111,34 @@ export async function sendContactEmails(data: ContactEmailProps) {
 }
 
 export async function verifyEmailConnection() {
+  const user = process.env.EMAIL_USER || "rsfederationng@gmail.com";
+  const rawPass = process.env.EMAIL_PASSWORD || "";
+  const cleanPass = rawPass.replace(/\s+/g, "");
+
+  console.log(`🔌 Verifying SMTP connection for user: ${user}`);
+  console.log(`🔑 Password status: ${rawPass ? `Present (${rawPass.length} chars)` : "Missing"}`);
+  if (rawPass !== cleanPass) {
+    console.log(`⚠️  Notice: Password contained spaces, they have been stripped automatically.`);
+  }
+
   try {
     const verified = await transporter.verify();
+    console.log("✅ SMTP Connection Verified Successfully!");
     return {
       success: true,
       message: "SMTP Connection Verified",
-      user: process.env.EMAIL_USER || "rsfederationng@gmail.com",
-      hasPassword: !!process.env.EMAIL_PASSWORD
+      user,
+      hasPassword: !!cleanPass,
+      passwordLength: cleanPass.length
     };
   } catch (error: any) {
     console.error("❌ SMTP Verification Error:", error);
     return {
       success: false,
       message: error.message,
-      user: process.env.EMAIL_USER || "rsfederationng@gmail.com",
-      hasPassword: !!process.env.EMAIL_PASSWORD
+      user,
+      hasPassword: !!cleanPass,
+      hint: error.code === 'EAUTH' ? "Check your App Password. Make sure 2FA is on and you generated an 'App Password' for Mail." : "Network or configuration error"
     };
   }
 }

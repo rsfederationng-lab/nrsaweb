@@ -41,37 +41,12 @@ export default function AdminNews() {
     content: "",
     imageUrl: "",
     isFeatured: false,
+    publishedAt: new Date().toISOString(),
   });
 
-  const getAuthHeaders = () => {
-    const token = localStorage.getItem("adminToken");
-    return {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    };
-  };
+  // ... (getAuthHeaders and fetchNews remain the same)
 
-  const fetchNews = async () => {
-    try {
-      const res = await fetch("/api/news", {
-        headers: getAuthHeaders(),
-        credentials: "include",
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setNewsItems(data);
-      }
-    } catch (error) {
-      console.error("Failed to fetch news:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchNews();
-  }, []);
-
+  // handleSave needs to use formData.publishedAt instead of generating it on the fly only for edits
   const handleSave = async () => {
     if (!formData.title || !formData.excerpt || !formData.content) {
       toast({
@@ -88,7 +63,8 @@ export default function AdminNews() {
 
       const payload = {
         ...formData,
-        publishedAt: editItem ? editItem.publishedAt : new Date().toISOString()
+        // Ensure publishedAt is a valid date string, fallback to now if missing/invalid
+        publishedAt: formData.publishedAt || new Date().toISOString()
       };
 
       const res = await fetch(url, {
@@ -118,12 +94,13 @@ export default function AdminNews() {
         setEditItem(null);
         resetForm();
       } else {
-        throw new Error("Save failed");
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || "Save failed");
       }
     } catch (error: any) {
       toast({
         title: "Error",
-        description: "Failed to save article.",
+        description: error.message || "Failed to save article.",
         variant: "destructive",
       });
     }
@@ -137,6 +114,7 @@ export default function AdminNews() {
       content: item.content,
       imageUrl: item.imageUrl || "",
       isFeatured: item.isFeatured || false,
+      publishedAt: item.publishedAt || new Date().toISOString(),
     });
     setDialogOpen(true);
   };
@@ -176,6 +154,7 @@ export default function AdminNews() {
       content: "",
       imageUrl: "",
       isFeatured: false,
+      publishedAt: new Date().toISOString(),
     });
 
   return (
@@ -234,6 +213,14 @@ export default function AdminNews() {
                 value={formData.imageUrl}
                 onChange={(url) => setFormData({ ...formData, imageUrl: url })}
               />
+              <div>
+                <Label>Date Published</Label>
+                <Input
+                  type="datetime-local"
+                  value={formData.publishedAt ? new Date(formData.publishedAt).toISOString().slice(0, 16) : ""}
+                  onChange={(e) => setFormData({ ...formData, publishedAt: new Date(e.target.value).toISOString() })}
+                />
+              </div>
               <div className="flex items-center gap-2">
                 <Switch
                   checked={formData.isFeatured}
