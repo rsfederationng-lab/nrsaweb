@@ -44,8 +44,59 @@ export default function AdminNews() {
     publishedAt: new Date().toISOString(),
   });
 
-  // ... (getAuthHeaders and fetchNews remain the same)
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem("adminToken");
+    return {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    };
+  };
 
+  const fetchNews = async () => {
+    console.log("Fetching news...");
+    try {
+      // Add a timeout signal
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+
+      const res = await fetch("/api/news", {
+        headers: getAuthHeaders(),
+        credentials: "include",
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+
+      console.log("News fetch status:", res.status);
+      if (res.ok) {
+        const data = await res.json();
+        console.log("News data received:", data.length);
+        setNewsItems(data);
+      } else {
+        const text = await res.text();
+        console.error("News fetch failed:", text);
+        toast({
+          title: "Error fetching news",
+          description: `Server returned ${res.status}`,
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
+      console.error("Failed to fetch news:", error);
+      toast({
+        title: "Network Error",
+        description: error.name === 'AbortError' ? "Request timed out" : error.message,
+        variant: "destructive",
+      });
+    } finally {
+      console.log("Setting loading to false");
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchNews();
+  }, []);
   // handleSave needs to use formData.publishedAt instead of generating it on the fly only for edits
   const handleSave = async () => {
     if (!formData.title || !formData.excerpt || !formData.content) {
