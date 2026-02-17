@@ -4,7 +4,7 @@ import { supabase } from "./lib/supabase.js";
 import { requireAdmin, requireSuperAdmin, type AdminRequest } from "./authMiddleware.js";
 import bcrypt from "bcrypt";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { sendContactEmails } from "./mail.js"; // Standard import
+import { sendContactEmails, verifyEmailConnection } from "./mail.js"; // Standard import
 
 // ... imports remain the same
 
@@ -598,6 +598,19 @@ export function registerAllRoutes(app: Express): void {
   });
 
   // Admin-only endpoints
+  app.get("/api/version", (req, res) => {
+    res.json({
+      version: "1.0.1",
+      timestamp: new Date().toISOString(),
+      desc: "Email Debug Added"
+    });
+  });
+
+  app.get("/api/debug/email", requireAdmin, async (req, res) => {
+    const result = await verifyEmailConnection();
+    res.json(result);
+  });
+
   app.get("/api/contacts", requireAdmin, async (req, res) => {
     try {
       const contacts = await storage.getAllContacts();

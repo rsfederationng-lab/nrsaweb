@@ -107,3 +107,23 @@ export async function sendContactEmails(data: ContactEmailProps) {
     return false;
   }
 }
+
+export async function verifyEmailConnection() {
+  try {
+    const verified = await transporter.verify();
+    return {
+      success: true,
+      message: "SMTP Connection Verified",
+      user: process.env.EMAIL_USER || "rsfederationng@gmail.com",
+      hasPassword: !!process.env.EMAIL_PASSWORD
+    };
+  } catch (error: any) {
+    console.error("❌ SMTP Verification Error:", error);
+    return {
+      success: false,
+      message: error.message,
+      user: process.env.EMAIL_USER || "rsfederationng@gmail.com",
+      hasPassword: !!process.env.EMAIL_PASSWORD
+    };
+  }
+}
