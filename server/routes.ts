@@ -580,15 +580,25 @@ export function registerAllRoutes(app: Express): void {
       if (!contact) return res.status(500).json({ error: "Failed to create contact" });
       console.log('🔍 [CONTACT API] Created:', contact?.id);
 
-      // Send emails (async, don't block response)
-      sendContactEmails({
-        name: contact.name,
-        email: contact.email,
-        type: contact.type,
-        message: contact.message,
-        subject: contact.subject || undefined,
-        phone: contact.phone || undefined,
-      }).catch(err => console.error("Mail error:", err));
+      // Send emails (awaiting to ensure delivery and debug errors)
+      try {
+        const emailSuccess = await sendContactEmails({
+          name: contact.name,
+          email: contact.email,
+          type: contact.type,
+          message: contact.message,
+          subject: contact.subject || undefined,
+          phone: contact.phone || undefined,
+        });
+
+        if (!emailSuccess) {
+          console.error("❌ [CONTACT API] Email sending failed (returned false).");
+        } else {
+          console.log("✅ [CONTACT API] Emails sent successfully.");
+        }
+      } catch (emailError) {
+        console.error("❌ [CONTACT API] Email sending threw an error:", emailError);
+      }
 
       res.status(201).json(contact);
     } catch (e: any) {
