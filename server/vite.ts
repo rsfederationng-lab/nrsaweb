@@ -27,7 +27,7 @@ export async function setupVite(app: Express, server: Server) {
   };
 
   const clientRoot = path.resolve(import.meta.dirname, "..", "client");
-  
+
   const vite = await createViteServer({
     ...viteConfig,
     configFile: false,
@@ -79,31 +79,31 @@ export async function setupVite(app: Express, server: Server) {
 
 // Serve React build files and handle SPA routing
 export function serveStatic(app: Express) {
-    const distPath = path.resolve(process.cwd(), "public_html");
+  const distPath = path.resolve(process.cwd(), "dist", "public");
 
-    // Serve static files with NO caching
-    app.use(express.static(distPath, {
-        etag: false,
-        lastModified: false,
-        maxAge: 0,
-        cacheControl: false,
-        setHeaders: (res, filePath) => {
-            res.setHeader("Cache-Control", "no-store");
-            if (filePath.endsWith(".js")) {
-                res.setHeader("Content-Type", "application/javascript");
-            } else if (filePath.endsWith(".css")) {
-                res.setHeader("Content-Type", "text/css");
-            }
-        }
-    }));
+  // Serve static files with NO caching
+  app.use(express.static(distPath, {
+    etag: false,
+    lastModified: false,
+    maxAge: 0,
+    cacheControl: false,
+    setHeaders: (res, filePath) => {
+      res.setHeader("Cache-Control", "no-store");
+      if (filePath.endsWith(".js")) {
+        res.setHeader("Content-Type", "application/javascript");
+      } else if (filePath.endsWith(".css")) {
+        res.setHeader("Content-Type", "text/css");
+      }
+    }
+  }));
 
-    // SPA fallback (also no caching)
-    app.get("*", (req, res, next) => {
-        if (req.path.startsWith("/api/")) {
-            return next();
-        }
-        res.setHeader("Cache-Control", "no-store");
-        res.sendFile(path.join(distPath, "index.html"));
-    });
+  // SPA fallback (also no caching)
+  app.get("*", (req, res, next) => {
+    if (req.path.startsWith("/api/")) {
+      return next();
+    }
+    res.setHeader("Cache-Control", "no-store");
+    res.sendFile(path.join(distPath, "index.html"));
+  });
 }
 
