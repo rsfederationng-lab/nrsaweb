@@ -3,12 +3,15 @@ import nodemailer from "nodemailer";
 // Create reusable transporter object using the default SMTP transport
 // Create reusable transporter object using the default SMTP transport
 const transporter = nodemailer.createTransport({
-  service: "gmail",
+  host: "smtp.gmail.com",
+  port: 587,
+  secure: false, // true for 465, false for other ports
   auth: {
     user: process.env.EMAIL_USER || "rsfederationng@gmail.com",
     // Google App Passwords often have spaces when copied, but must be sent without them
     pass: (process.env.EMAIL_PASSWORD || "").replace(/\s+/g, ""),
   },
+  family: 4, // Forces IPv4 to prevent ENETUNREACH errors
 });
 
 interface ContactEmailProps {
