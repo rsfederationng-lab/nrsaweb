@@ -17,6 +17,7 @@ interface NewsArticle {
   imageUrl?: string;
   isFeatured?: boolean;
   publishedAt: string;
+  createdAt: string;
 }
 
 export default function NewsDetail({ id: propId }: { id?: string } = {}) {
@@ -152,7 +153,14 @@ export default function NewsDetail({ id: propId }: { id?: string } = {}) {
               )}
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Calendar className="w-4 h-4" />
-                <span className="text-sm">{article.publishedAt ? format(new Date(article.publishedAt), "MMMM dd, yyyy") : "No date"}</span>
+                <span className="text-sm">
+                  {(() => {
+                    const pubDate = article.publishedAt ? new Date(article.publishedAt) : null;
+                    const createdDate = article.createdAt ? new Date(article.createdAt) : new Date();
+                    const displayDate = (pubDate && pubDate.getFullYear() > 1970) ? pubDate : createdDate;
+                    return format(displayDate, "MMMM dd, yyyy");
+                  })()}
+                </span>
               </div>
             </div>
 

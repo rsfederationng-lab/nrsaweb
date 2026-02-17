@@ -33,7 +33,9 @@ export function NewsEventsUnified() {
             originalId: item.id,
             type: 'news',
             title: item.title,
-            date: item.publishedAt,
+            date: (item.publishedAt && new Date(item.publishedAt).getFullYear() > 1970)
+                ? item.publishedAt
+                : (item.createdAt || new Date()),
             location: null,
             imageUrl: item.imageUrl,
             link: `/news/${item.id}`,
@@ -130,7 +132,11 @@ export function NewsEventsUnified() {
                                         <div className="flex items-center justify-between text-xs text-muted-foreground mb-2 font-medium">
                                             <div className="flex items-center">
                                                 <Calendar className="w-3.5 h-3.5 mr-1.5 text-primary" />
-                                                {item.date ? format(new Date(item.date), 'MMM dd, yyyy') : 'Date TBD'}
+                                                {(() => {
+                                                    const d = item.date ? new Date(item.date) : null;
+                                                    if (!d || d.getFullYear() === 1970) return 'Recent Update';
+                                                    return format(d, 'MMM dd, yyyy');
+                                                })()}
                                             </div>
                                             {item.location && (
                                                 <div className="flex items-center truncate max-w-[120px]" title={item.location}>

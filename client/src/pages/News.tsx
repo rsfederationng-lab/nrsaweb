@@ -103,7 +103,14 @@ export default function News() {
                       )}
                       <div className="flex items-center gap-1 text-xs text-muted-foreground">
                         <Calendar className="w-3 h-3" />
-                        <span>{item.publishedAt ? format(new Date(item.publishedAt), "MMM dd, yyyy") : "No date"}</span>
+                        <span>
+                          {(() => {
+                            const pubDate = item.publishedAt ? new Date(item.publishedAt) : null;
+                            const createdDate = item.createdAt ? new Date(item.createdAt) : new Date();
+                            const displayDate = (pubDate && pubDate.getFullYear() > 1970) ? pubDate : createdDate;
+                            return format(displayDate, "MMM dd, yyyy");
+                          })()}
+                        </span>
                       </div>
                     </div>
                     <CardTitle className="text-xl leading-tight">{item.title}</CardTitle>

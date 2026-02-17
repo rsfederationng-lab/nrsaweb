@@ -85,19 +85,24 @@ export default function AdminNews() {
     try {
       const method = editItem ? "PATCH" : "POST";
       const url = editItem ? `/api/news/${editItem.id}` : "/api/news";
-      
+
+      const payload = {
+        ...formData,
+        publishedAt: editItem ? editItem.publishedAt : new Date().toISOString()
+      };
+
       const res = await fetch(url, {
         method,
         headers: getAuthHeaders(),
         credentials: "include",
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
 
       if (res.ok) {
         const savedItem = await res.json();
-        
+
         if (editItem) {
-          setNewsItems(items => items.map(item => 
+          setNewsItems(items => items.map(item =>
             item.id === editItem.id ? savedItem : item
           ));
         } else {
@@ -108,7 +113,7 @@ export default function AdminNews() {
           title: editItem ? "Article Updated" : "Article Created",
           description: "News article saved successfully!",
         });
-        
+
         setDialogOpen(false);
         setEditItem(null);
         resetForm();
@@ -236,8 +241,8 @@ export default function AdminNews() {
                 />
                 <Label>Featured Article</Label>
               </div>
-              <Button 
-                className="w-full bg-primary hover:bg-primary/90" 
+              <Button
+                className="w-full bg-primary hover:bg-primary/90"
                 onClick={handleSave}
               >
                 {editItem ? "Update Article" : "Save Article"}
@@ -276,7 +281,12 @@ export default function AdminNews() {
               {newsItems.map((item) => (
                 <TableRow key={item.id}>
                   <TableCell>{item.title}</TableCell>
-                  <TableCell>{new Date(item.publishedAt).toLocaleDateString()}</TableCell>
+                  <TableCell>
+                    {(() => {
+                      const d = new Date(item.publishedAt);
+                      return d.getFullYear() === 1970 ? "No Date" : d.toLocaleDateString();
+                    })()}
+                  </TableCell>
                   <TableCell>{item.isFeatured ? "Yes" : "No"}</TableCell>
                   <TableCell className="text-right space-x-2">
                     <Button
