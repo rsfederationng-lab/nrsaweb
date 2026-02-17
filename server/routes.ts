@@ -4,6 +4,9 @@ import { supabase } from "./lib/supabase.js";
 import { requireAdmin, requireSuperAdmin, type AdminRequest } from "./authMiddleware.js";
 import bcrypt from "bcrypt";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { sendContactEmails } from "./mail.js"; // Standard import
+
+// ... imports remain the same
 
 import {
   insertHeroSlideSchema,
@@ -578,16 +581,14 @@ export function registerAllRoutes(app: Express): void {
       console.log('🔍 [CONTACT API] Created:', contact?.id);
 
       // Send emails (async, don't block response)
-      import("./mail.js").then(({ sendContactEmails }) => {
-        sendContactEmails({
-          name: contact.name,
-          email: contact.email,
-          type: contact.type, // Now available in schema
-          message: contact.message,
-          subject: contact.subject || undefined,
-          phone: contact.phone || undefined,
-        }).catch(err => console.error("Mail error:", err));
-      });
+      sendContactEmails({
+        name: contact.name,
+        email: contact.email,
+        type: contact.type,
+        message: contact.message,
+        subject: contact.subject || undefined,
+        phone: contact.phone || undefined,
+      }).catch(err => console.error("Mail error:", err));
 
       res.status(201).json(contact);
     } catch (e: any) {

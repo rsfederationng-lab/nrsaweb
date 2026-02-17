@@ -747,6 +747,12 @@ export const storage = {
       throw activationsError;
     }
 
+    const { error: newsError } = await supabase.from('interschool_news').delete().eq('year_id', id);
+    if (newsError) {
+      console.error("Error deleting related news:", newsError);
+      throw newsError;
+    }
+
     const { error } = await supabase.from('interschool_years').delete().eq('id', id);
     if (error) throw error;
     return true;
