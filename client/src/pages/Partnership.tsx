@@ -12,6 +12,7 @@ import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import type { Ambassador } from "@/types/schema";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { SEO } from "@/components/SEO";
 
 
 export default function Partnership() {

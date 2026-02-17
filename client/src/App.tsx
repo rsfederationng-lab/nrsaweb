@@ -60,6 +60,7 @@ function PageWithLayout({ children }: { children: React.ReactNode }) {
 }
 
 import ScrollToTop from "@/components/ScrollToTop";
+import { NRSABotWidget } from "@/components/NRSABotWidget";
 
 export default function App() {
   return (
@@ -67,6 +68,7 @@ export default function App() {
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <ScrollToTop />
+          <NRSABotWidget />
           <Switch>
 
             {/* Admin Routes */}

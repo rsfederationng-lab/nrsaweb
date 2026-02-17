@@ -2,6 +2,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
 import { fileURLToPath } from "url";
+import Sitemap from "vite-plugin-sitemap";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 console.log("Vite Config Debug - Root:", path.resolve(__dirname, "client"));
@@ -11,6 +12,18 @@ export default defineConfig(() => {
   const plugins = [
     react({
       jsxRuntime: "automatic",
+    }),
+    Sitemap({
+      hostname: 'https://nrsa.com.ng',
+      dynamicRoutes: [
+        '/interschool-championship',
+        '/partnership',
+        '/news',
+        '/events',
+        '/players',
+        '/clubs',
+        '/leaders'
+      ]
     }),
   ];
 

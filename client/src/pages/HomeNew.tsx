@@ -9,12 +9,17 @@ import { Calendar, Users, Trophy, ChevronRight } from "lucide-react";
 import { ScrollFade } from "@/components/animations/ScrollFade";
 import { DynamicGallery } from "@/components/DynamicGallery";
 
+import { SEO } from "@/components/SEO";
+
 export default function HomeNew() {
   return (
-    <div className="min-h-screen">
-      <Helmet>
-        <title>Home - Nigeria Rope Skipping Association</title>
-      </Helmet>
+    <div className="min-h-screen bg-white">
+      <SEO
+        title="Nigeria Rope Skipping Association | Official Governing Body"
+        description="The official body for rope skipping in Nigeria. Promoting grassroots sports, Y-Court competitions, and the National Alpha League."
+        isHome={true}
+      />
+
       {/* Hero Section */}
       <Hero />
 
