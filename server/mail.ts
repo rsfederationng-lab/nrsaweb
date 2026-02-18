@@ -1,23 +1,46 @@
 import nodemailer from "nodemailer";
+import dns from "dns";
+import { promisify } from "util";
 
-// Create reusable transporter object using the default SMTP transport
-// Create reusable transporter object using the default SMTP transport
-const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 587,
-  secure: false, // true for 465, false for 587
-  auth: {
-    user: process.env.EMAIL_USER || "rsfederationng@gmail.com",
-    // Google App Passwords often have spaces when copied, but must be sent without them
-    pass: (process.env.EMAIL_PASSWORD || "").replace(/\s+/g, ""),
-  },
-  family: 4, // Forces IPv4 to prevent ENETUNREACH errors
-  logger: true, // Log to console
-  debug: true, // Include debug info
-  connectionTimeout: 30000, // 30s
-  greetingTimeout: 30000, // 30s
-  socketTimeout: 30000, // 30s
-});
+const resolve4 = promisify(dns.resolve4);
+
+let transporter: nodemailer.Transporter | null = null;
+
+async function getTransporter() {
+  if (transporter) return transporter;
+
+  let host = "smtp.gmail.com";
+  try {
+    const addresses = await resolve4("smtp.gmail.com");
+    if (addresses && addresses.length > 0) {
+      host = addresses[0];
+      console.log(`[Mail] Resolved Gmail SMTP to IPv4: ${host}`);
+    }
+  } catch (err) {
+    console.warn(`[Mail] IPv4 resolution failed, using hostname: ${err}`);
+  }
+
+  console.log(`[Mail] Configuring transporter with host: ${host} (Port 587)`);
+
+  transporter = nodemailer.createTransport({
+    host: host,
+    port: 587,
+    secure: false, // STARTTLS
+    auth: {
+      user: process.env.EMAIL_USER || "rsfederationng@gmail.com",
+      pass: (process.env.EMAIL_PASSWORD || "").replace(/\s+/g, ""),
+    },
+    tls: {
+      servername: "smtp.gmail.com", // Required when using IP address
+    },
+    logger: true,
+    debug: true,
+    connectionTimeout: 30000,
+    greetingTimeout: 30000,
+  });
+
+  return transporter;
+}
 
 interface ContactEmailProps {
   name: string;
@@ -103,6 +126,8 @@ export async function sendContactEmails(data: ContactEmailProps) {
   };
 
   try {
+    const transporter = await getTransporter();
+
     console.log(`📧 Sending admin notification for ${type}...`);
     await transporter.sendMail(adminMailOptions);
     console.log(`✅ Admin notification sent.`);
@@ -130,6 +155,7 @@ export async function verifyEmailConnection() {
   }
 
   try {
+    const transporter = await getTransporter();
     const verified = await transporter.verify();
     console.log("✅ SMTP Connection Verified Successfully!");
     return {
