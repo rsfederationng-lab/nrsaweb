@@ -14,6 +14,10 @@ import { initializeSupabase } from "./lib/supabase";
 import { createClient } from "@supabase/supabase-js";
 import fs from "fs";
 import path from "path";
+import dns from "dns";
+
+// Force IPv4 to prevent ENETUNREACH errors on cloud providers (Render/AWS/etc)
+dns.setDefaultResultOrder('ipv4first');
 
 
 // Create Express app
