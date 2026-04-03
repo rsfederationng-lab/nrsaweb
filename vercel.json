@@ -1,8 +1,13 @@
 {
   "version": 2,
-  "framework": "vite",
-  "buildCommand": "npm run build",
+  "buildCommand": "npm run vercel:build",
   "outputDirectory": "dist/public",
+  "functions": {
+    "api/index.ts": {
+      "memory": 1024,
+      "maxDuration": 30
+    }
+  },
   "rewrites": [
     {
       "source": "/api/(.*)",

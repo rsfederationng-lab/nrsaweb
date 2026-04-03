@@ -12,6 +12,8 @@
     "build:client": "cross-env NODE_ENV=production vite build --mode production",
     "build:server": "vite build --config vite.config.server.js --mode production",
     "build": "npm run build:client && npm run build:server",
+    "vercel:build": "npm run build:client && npm run build:vercel-api",
+    "build:vercel-api": "vite build --config vite.config.vercel.js --mode production",
     "build:prod": "NODE_ENV=production npm run build:client && npm run build:server",
     "start": "NODE_ENV=production node dist/server/index.js",
     "check": "tsc",
