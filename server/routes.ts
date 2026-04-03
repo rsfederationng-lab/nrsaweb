@@ -575,13 +575,28 @@ export function registerAllRoutes(app: Express): void {
   app.post("/api/contacts", async (req, res) => {
     try {
       console.log('🔍 [CONTACT API] Received:', req.body);
-      const validatedData = insertContactSchema.parse(req.body);
-      const contact = await storage.createContact(validatedData);
+      
+      let validatedData;
+      try {
+        validatedData = insertContactSchema.parse(req.body);
+      } catch (validationErr: any) {
+        console.error('🔍 [CONTACT API] Validation error:', validationErr.errors || validationErr.message);
+        return res.status(400).json({ error: validationErr.errors?.[0]?.message || validationErr.message });
+      }
 
-      if (!contact) return res.status(500).json({ error: "Failed to create contact" });
+      let contact;
+      try {
+        contact = await storage.createContact(validatedData);
+      } catch (dbErr: any) {
+        const msg = dbErr?.message || JSON.stringify(dbErr) || "Database error";
+        console.error('🔍 [CONTACT API] DB error:', msg);
+        return res.status(500).json({ error: "Database error: " + msg });
+      }
+
+      if (!contact) return res.status(500).json({ error: "Failed to create contact — storage returned null" });
       console.log('🔍 [CONTACT API] Created:', contact?.id);
 
-      // Send emails (background process to keep UI fast)
+      // Send emails (background — non-blocking)
       sendContactEmails({
         name: contact.name,
         email: contact.email,
@@ -593,10 +608,11 @@ export function registerAllRoutes(app: Express): void {
         if (success) console.log("✅ [CONTACT API] Emails sent successfully.");
         else console.error("❌ [CONTACT API] Email sending failed.");
       }).catch(err => console.error("❌ [CONTACT API] Email error:", err));
+      
       res.status(201).json(contact);
     } catch (e: any) {
-      console.error('🔍 [CONTACT API] Error:', e.message);
-      res.status(400).json({ error: e.message });
+      console.error('🔍 [CONTACT API] Unhandled error:', e);
+      res.status(500).json({ error: e?.message || "Unknown server error" });
     }
   });
 
@@ -1310,14 +1326,35 @@ A: Elite-level individual competitions for experienced athletes, featuring advan
   app.post("/api/subscribers", async (req, res) => {
     try {
       const validatedData = insertSubscriberSchema.parse(req.body);
-      const subscriber = await storage.createSubscriber(validatedData);
-      if (!subscriber) return res.status(500).json({ error: "Failed to create subscriber" });
       
+      let subscriber;
+      try {
+        subscriber = await storage.createSubscriber(validatedData);
+      } catch (dbError: any) {
+        const msg = dbError?.message || JSON.stringify(dbError) || "";
+        console.error("[Subscribers] DB Error:", msg);
+
+        // Duplicate email
+        if (msg.includes("duplicate") || msg.includes("unique") || msg.includes("23505")) {
+          return res.status(409).json({ error: "This email is already subscribed!" });
+        }
+        // Table missing — give an actionable message
+        if (msg.includes("relation") && msg.includes("does not exist")) {
+          return res.status(500).json({ error: "Database table not set up. Please run the SQL migration in Supabase." });
+        }
+        return res.status(500).json({ error: "Database error: " + msg });
+      }
+
+      if (!subscriber) return res.status(500).json({ error: "Failed to create subscriber" });
+
       // Fire and forget welcome email
       sendNewsletterWelcome(validatedData.email).catch(e => console.error("Welcome email failed:", e));
 
       res.status(201).json(subscriber);
-    } catch (e: any) { res.status(400).json({ error: e.message }); }
+    } catch (e: any) { 
+      console.error("[Subscribers] Validation Error:", e.message);
+      res.status(400).json({ error: e.message }); 
+    }
   });
 
   app.delete("/api/subscribers/:id", requireAdmin, async (req, res) => {

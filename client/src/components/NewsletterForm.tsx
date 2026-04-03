@@ -44,11 +44,12 @@ export function NewsletterForm() {
             });
 
             form.reset();
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error subscribing:", error);
+            const message = error?.message || "Something went wrong. Please try again.";
             toast({
-                title: "Error",
-                description: "Something went wrong. Please try again.",
+                title: message.includes("already subscribed") ? "Already Subscribed" : "Error",
+                description: message,
                 variant: "destructive",
             });
         }
