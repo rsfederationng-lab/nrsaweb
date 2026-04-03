@@ -456,3 +456,22 @@ export const insertInterschoolNewsSchema = createInsertSchema(interschoolNews, {
 
 export type InsertInterschoolNews = z.infer<typeof insertInterschoolNewsSchema>;
 export type InterschoolNews = typeof interschoolNews.$inferSelect;
+
+// Subscribers (Newsletter)
+export const subscribers = pgTable("subscribers", {
+  id: serial("id").primaryKey(),
+  email: text("email").notNull().unique(),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertSubscriberSchema = createInsertSchema(subscribers, {
+  email: z.string().trim().email("Invalid email address"),
+}).omit({
+  id: true,
+  createdAt: true,
+  isActive: true,
+});
+
+export type InsertSubscriber = z.infer<typeof insertSubscriberSchema>;
+export type Subscriber = typeof subscribers.$inferSelect;

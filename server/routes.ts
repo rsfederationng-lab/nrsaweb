@@ -4,7 +4,7 @@ import { supabase } from "./lib/supabase.js";
 import { requireAdmin, requireSuperAdmin, type AdminRequest } from "./authMiddleware.js";
 import bcrypt from "bcrypt";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { sendContactEmails, verifyEmailConnection } from "./mail.js"; // Standard import
+import { sendContactEmails, verifyEmailConnection, sendNewsletterWelcome } from "./mail.js";
 
 // ... imports remain the same
 
@@ -25,6 +25,7 @@ import {
   insertSchoolStandingSchema,
   insertSchoolActivationSchema,
   insertInterschoolNewsSchema,
+  insertSubscriberSchema,
   type Admin,
 } from "@shared/schema";
 
@@ -1296,6 +1297,36 @@ A: Elite-level individual competitions for experienced athletes, featuring advan
       console.error("NRSA Bot Error:", e.message);
       res.status(500).json({ error: "Failed to process request" });
     }
+  });
+
+  // ---------- SUBSCRIBERS ----------
+  app.get("/api/subscribers", requireAdmin, async (req, res) => {
+    try {
+      const subscribers = await storage.getAllSubscribers();
+      res.json(subscribers);
+    } catch (e: any) { res.status(500).json({ error: e.message }); }
+  });
+
+  app.post("/api/subscribers", async (req, res) => {
+    try {
+      const validatedData = insertSubscriberSchema.parse(req.body);
+      const subscriber = await storage.createSubscriber(validatedData);
+      if (!subscriber) return res.status(500).json({ error: "Failed to create subscriber" });
+      
+      // Fire and forget welcome email
+      sendNewsletterWelcome(validatedData.email).catch(e => console.error("Welcome email failed:", e));
+
+      res.status(201).json(subscriber);
+    } catch (e: any) { res.status(400).json({ error: e.message }); }
+  });
+
+  app.delete("/api/subscribers/:id", requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
+      await storage.deleteSubscriber(id);
+      res.status(204).send();
+    } catch (e: any) { res.status(500).json({ error: e.message }); }
   });
 
 }

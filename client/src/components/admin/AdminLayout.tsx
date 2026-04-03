@@ -64,6 +64,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     { label: "Affiliations", path: "/admin-nrsa-dashboard/affiliations", icon: Handshake },
     { label: "Member State", path: "/admin-nrsa-dashboard/Memberstate", icon: LinkIcon },
     { label: "Contact Messages", path: "/admin-nrsa-dashboard/contacts", icon: Mail },
+    { label: "Subscribers", path: "/admin-nrsa-dashboard/subscribers", icon: Users },
     { label: "Site Content", path: "/admin-nrsa-dashboard/site-content", icon: ImageIcon },
     { label: "Ambassadors", path: "/admin-nrsa-dashboard/ambassadors", icon: Users },
     { label: "Manage Admins", path: "/admin-nrsa-dashboard/admins", icon: ShieldCheck },

@@ -28,6 +28,8 @@ import Contact from "@/pages/Contact";
 import Partnership from "@/pages/Partnership";
 import History from "@/pages/History";
 import Interschool from "@/pages/Interschool";
+import PrivacyPolicy from "@/pages/PrivacyPolicy";
+import TermsOfService from "@/pages/TermsOfService";
 
 import AdminDashboard from "@/pages/admin/Dashboard";
 import AdminHeroSlides from "@/pages/admin/HeroSlides";
@@ -46,6 +48,7 @@ import AdminAdmins from "@/pages/admin/Admins";
 import AdminLogin from "@/pages/admin/Login";
 import SiteContentManager from "@/pages/admin/SiteContentManager";
 import AdminAmbassadors from "@/pages/admin/Ambassadors";
+import AdminSubscribers from "@/pages/admin/Subscribers";
 
 import NotFound from "@/pages/not-found";
 
@@ -122,6 +125,9 @@ export default function App() {
             <Route path="/admin-nrsa-dashboard/ambassadors">
               <AdminLayout><AdminAmbassadors /></AdminLayout>
             </Route>
+            <Route path="/admin-nrsa-dashboard/subscribers">
+              <AdminLayout><AdminSubscribers /></AdminLayout>
+            </Route>
 
             {/* Public Routes */}
             <Route path="/">
@@ -191,6 +197,12 @@ export default function App() {
             </Route>
             <Route path="/interschool-championship">
               <PageWithLayout><Interschool /></PageWithLayout>
+            </Route>
+            <Route path="/privacy-policy">
+              <PageWithLayout><PrivacyPolicy /></PageWithLayout>
+            </Route>
+            <Route path="/terms-of-service">
+              <PageWithLayout><TermsOfService /></PageWithLayout>
             </Route>
 
             {/* Fallback */}

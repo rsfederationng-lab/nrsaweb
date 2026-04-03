@@ -16,13 +16,18 @@ export default defineConfig(() => {
     Sitemap({
       hostname: 'https://nrsa.com.ng',
       dynamicRoutes: [
+        '/about',
+        '/leaders',
+        '/history',
+        '/member-states',
+        '/players',
         '/interschool-championship',
+        '/competitions',
         '/partnership',
+        '/contact',
         '/news',
         '/events',
-        '/players',
-        '/clubs',
-        '/leaders'
+        '/clubs'
       ]
     }),
   ];

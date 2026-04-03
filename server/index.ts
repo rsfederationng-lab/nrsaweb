@@ -121,9 +121,14 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
 // Create HTTP server (This line remains)
 const server: Server = createServer(app);
 
+// Export the app for Vercel serverless functions
+export default app;
+
 // Start server - Replit uses port 5000 for web preview
 const PORT = parseInt(process.env.PORT || "5000");
 
+// Only bind to dynamic port locally or dynamically if not on Vercel Serverless
+if (process.env.VERCEL !== "1") {
 (async () => {
     try {
         await createTables();
@@ -169,6 +174,7 @@ const PORT = parseInt(process.env.PORT || "5000");
         process.exit(1);
     }
 })();
+}
 
 process.on('uncaughtException', (error) => {
     console.error('Uncaught Exception:', error);

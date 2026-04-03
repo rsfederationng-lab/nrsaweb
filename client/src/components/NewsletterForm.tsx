@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
-import { supabase } from "@/lib/supabase";
 
 const formSchema = z.object({
     email: z.string().email({
@@ -26,11 +25,16 @@ export function NewsletterForm() {
 
     async function onSubmit(values: z.infer<typeof formSchema>) {
         try {
-            const { error } = await supabase
-                .from("subscribers")
-                .insert([{ email: values.email }]);
+            const response = await fetch("/api/subscribers", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email: values.email }),
+            });
 
-            if (error) throw error;
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || "Failed to subscribe");
+            }
 
             toast({
                 title: "Subscribed!",

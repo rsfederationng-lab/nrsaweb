@@ -221,7 +221,15 @@ export function Footer() {
         {/* Copyright */}
         <div className="border-t border-white/10 pt-8 text-center text-sm text-gray-400">
           <p>© {new Date().getFullYear()} Nigeria Rope Skipping Association. All rights reserved.</p>
-          <p className="mt-2">CAC Registered Sports Federation</p>
+          <div className="flex items-center justify-center gap-4 mt-2">
+            <Link href="/privacy-policy">
+              <span className="hover:text-white transition-colors cursor-pointer">Privacy Policy</span>
+            </Link>
+            <Link href="/terms-of-service">
+              <span className="hover:text-white transition-colors cursor-pointer">Terms of Service</span>
+            </Link>
+          </div>
+          <p className="mt-4">CAC Registered Sports Federation</p>
           <Link href="/admin/login">
             <span
               className="inline-block mt-4 text-xs text-gray-600 hover:text-gray-500 transition-colors cursor-pointer opacity-50 hover:opacity-100"
