@@ -59,7 +59,7 @@ export function UnderstandingInterschool() {
                                         Competitions follow a rigorous 9-discipline structure designed to test speed, endurance, and freestyle skills.
                                     </p>
                                     <div className="flex flex-wrap gap-2 pt-2">
-                                        {["SRSS", "SRDU", "SRSE", "DDSR", "DDSS", "DDSF", "DDDO", "DDDC", "DDTF"].map((code) => (
+                                        {["SRSS", "SRSE", "SROF", "SRCC", "SRDU", "SRSR", "DDSR", "DSS", "LMS"].map((code) => (
                                             <Badge key={code} variant="secondary" className="bg-emerald-50 text-emerald-700 text-xs font-mono">
                                                 {code}
                                             </Badge>

@@ -142,7 +142,7 @@ export default function InterschoolRegister() {
     { title: "Contact Person", description: "Principal and coordinator details" },
     { title: "Contact Information", description: "Email and phone numbers" },
     { title: "Participation Details", description: "Athletes and categories" },
-    { title: "Additional Information", description: "Optional details" },
+    { title: "Readiness Check", description: "A few quick questions about your school" },
     { title: "Consent & Submit", description: "Review and confirm" },
   ];
 
@@ -380,29 +380,87 @@ export default function InterschoolRegister() {
                 </div>
               )}
 
-              {/* Step 5: Additional Information */}
+              {/* Step 5: Knowledge Check — Yes/No Question Bank */}
               {currentStep === 5 && (
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="eventsCategories">
-                      Events/Categories of Interest (Optional)
-                    </Label>
-                    <Textarea
-                      id="eventsCategories"
-                      {...register("eventsCategories")}
-                      placeholder="e.g., Speed, Freestyle, Double Dutch"
-                      rows={3}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="additionalNotes">Additional Notes (Optional)</Label>
-                    <Textarea
-                      id="additionalNotes"
-                      {...register("additionalNotes")}
-                      placeholder="Any other information you'd like to share"
-                      rows={3}
-                    />
-                  </div>
+                <div className="space-y-5">
+                  <p className="text-sm text-gray-500">
+                    Please answer each question honestly — this helps NRSA understand your school's readiness.
+                  </p>
+
+                  {[
+                    {
+                      key: "knowsYCourt",
+                      question: "Does your school understand the Y-Court competition concept?",
+                    },
+                    {
+                      key: "knows9Disciplines",
+                      question: "Are your athletes familiar with the 9 competition disciplines (SRSS, SRSE, SROF, SRCC, SRDU, SRSR, DDSR, DSS, LMS)?",
+                    },
+                    {
+                      key: "hasTrainedAthletes",
+                      question: "Does your school understand that athletes are required to participate in all 9 disciplines on competition day?",
+                    },
+                    {
+                      key: "hasJudge",
+                      question: "Does your school have a teacher or coach who can serve as an on-site judge?",
+                    },
+                    {
+                      key: "canTravelToVenue",
+                      question: "Can your school confirm that athletes will physically be present at the venue on competition day?",
+                    },
+                    {
+                      key: "attendedBefore",
+                      question: "Has your school participated in any previous NRSA competition or event?",
+                    },
+                  ].map(({ key, question }) => {
+                    const current = (() => {
+                      try {
+                        const val = watchedValues.eventsCategories;
+                        return val ? JSON.parse(val)[key] : undefined;
+                      } catch { return undefined; }
+                    })();
+
+                    const setAnswer = (answer: "yes" | "no") => {
+                      try {
+                        const existing = watchedValues.eventsCategories
+                          ? JSON.parse(watchedValues.eventsCategories)
+                          : {};
+                        setValue("eventsCategories", JSON.stringify({ ...existing, [key]: answer }));
+                      } catch {
+                        setValue("eventsCategories", JSON.stringify({ [key]: answer }));
+                      }
+                    };
+
+                    return (
+                      <div key={key} className="border rounded-lg p-4 bg-white space-y-3">
+                        <p className="text-sm font-medium text-gray-800">{question}</p>
+                        <div className="flex gap-3">
+                          <button
+                            type="button"
+                            onClick={() => setAnswer("yes")}
+                            className={`flex-1 py-2 rounded-md text-sm font-semibold border-2 transition-all ${
+                              current === "yes"
+                                ? "bg-emerald-600 border-emerald-600 text-white"
+                                : "bg-white border-gray-200 text-gray-600 hover:border-emerald-400"
+                            }`}
+                          >
+                            ✓ Yes
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setAnswer("no")}
+                            className={`flex-1 py-2 rounded-md text-sm font-semibold border-2 transition-all ${
+                              current === "no"
+                                ? "bg-red-500 border-red-500 text-white"
+                                : "bg-white border-gray-200 text-gray-600 hover:border-red-300"
+                            }`}
+                          >
+                            ✗ No
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
 
