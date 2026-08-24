@@ -122,6 +122,34 @@ export default function InterschoolRegister() {
   };
 
   const nextStep = async () => {
+    // Step 5 (Readiness Check) — block unless all 6 questions answered
+    if (currentStep === 5) {
+      try {
+        const answers = watchedValues.eventsCategories
+          ? JSON.parse(watchedValues.eventsCategories)
+          : {};
+        const required = ["knowsYCourt", "knows9Disciplines", "hasTrainedAthletes", "hasJudge", "canTravelToVenue", "attendedBefore"];
+        const allAnswered = required.every((k) => answers[k] === "yes" || answers[k] === "no");
+        if (!allAnswered) {
+          toast({
+            title: "Please answer all questions",
+            description: "You must answer Yes or No for every question before proceeding.",
+            variant: "destructive",
+          });
+          return;
+        }
+      } catch {
+        toast({
+          title: "Please answer all questions",
+          description: "You must answer Yes or No for every question before proceeding.",
+          variant: "destructive",
+        });
+        return;
+      }
+      setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1));
+      return;
+    }
+
     const fieldsToValidate = stepFields[currentStep];
     const isValid = await trigger(fieldsToValidate as any);
     if (isValid) {
@@ -469,14 +497,50 @@ export default function InterschoolRegister() {
                 <div className="space-y-6">
                   <div className="bg-gray-50 p-6 rounded-lg space-y-3">
                     <h3 className="font-semibold text-lg">Review Your Information</h3>
-                    <div className="space-y-2 text-sm">
+                    <div className="grid grid-cols-1 gap-2 text-sm">
                       <p><strong>School:</strong> {watchedValues.schoolName}</p>
                       <p><strong>State:</strong> {watchedValues.state}</p>
+                      <p><strong>Address:</strong> {watchedValues.schoolAddress}</p>
+                      <p><strong>Principal:</strong> {watchedValues.principalName}</p>
                       <p><strong>Coordinator:</strong> {watchedValues.coordinatorName}</p>
                       <p><strong>Email:</strong> {watchedValues.email}</p>
+                      <p><strong>Phone:</strong> {watchedValues.coordinatorPhone}</p>
+                      <p><strong>WhatsApp:</strong> {watchedValues.whatsappNumber}</p>
                       <p><strong>Athletes:</strong> {watchedValues.athleteCount}</p>
                       <p><strong>Category:</strong> {watchedValues.category}</p>
                     </div>
+
+                    {/* Readiness answers summary */}
+                    {(() => {
+                      try {
+                        const answers = watchedValues.eventsCategories
+                          ? JSON.parse(watchedValues.eventsCategories)
+                          : {};
+                        const labels: Record<string, string> = {
+                          knowsYCourt: "Understands Y-Court concept",
+                          knows9Disciplines: "Knows all 9 disciplines",
+                          hasTrainedAthletes: "Athletes to compete in all 9 disciplines",
+                          hasJudge: "Has an on-site judge/coach",
+                          canTravelToVenue: "Can attend venue on competition day",
+                          attendedBefore: "Participated in previous NRSA event",
+                        };
+                        return (
+                          <div className="mt-3 pt-3 border-t">
+                            <p className="font-semibold text-sm mb-2">Readiness Check</p>
+                            <div className="grid grid-cols-1 gap-1">
+                              {Object.entries(labels).map(([key, label]) => (
+                                <div key={key} className="flex items-center justify-between text-sm">
+                                  <span className="text-gray-600">{label}</span>
+                                  <span className={`font-semibold ${answers[key] === "yes" ? "text-emerald-600" : "text-red-500"}`}>
+                                    {answers[key] === "yes" ? "Yes" : answers[key] === "no" ? "No" : "—"}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      } catch { return null; }
+                    })()}
                   </div>
 
                   <div className="flex items-start space-x-3">
