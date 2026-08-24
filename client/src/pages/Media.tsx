@@ -1,4 +1,5 @@
-import React from "react";
+﻿import React from "react";
+import { SEO } from "@/components/SEO";
 import { useState, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -38,6 +39,12 @@ export default function Media() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Media Centre"
+        description="Browse the official NRSA media centre — photos and highlights from Nigerian rope skipping competitions, events, and championships."
+        path="/media"
+        breadcrumbs={[{ name: "Media", url: "/media" }]}
+      />
       {/* Hero Section */}
       <section className="bg-primary text-primary-foreground py-20">
         <div className="max-w-7xl mx-auto px-6 md:px-12">

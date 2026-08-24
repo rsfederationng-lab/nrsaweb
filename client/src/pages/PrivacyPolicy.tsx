@@ -1,14 +1,17 @@
 import React from "react";
-import { Helmet } from "react-helmet-async";
+import { SEO } from "@/components/SEO";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollFade } from "@/components/animations/ScrollFade";
 
 export default function PrivacyPolicy() {
   return (
     <div className="min-h-screen bg-background">
-      <Helmet>
-        <title>Privacy Policy - NRSA</title>
-      </Helmet>
+      <SEO
+        title="Privacy Policy"
+        description="Read the NRSA Privacy Policy — how we collect, use, and protect personal information submitted through our website and registration forms."
+        path="/privacy-policy"
+        pageType="WebPage"
+      />
 
       {/* Hero Section */}
       <section className="relative bg-gradient-to-r from-primary to-primary/80 text-white py-16">

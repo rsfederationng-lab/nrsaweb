@@ -1,6 +1,6 @@
 import React from "react";
 import { OptimizedImage } from "@/components/OptimizedImage";
-import { Helmet } from "react-helmet-async";
+import { SEO } from "@/components/SEO";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, User, Phone, Mail } from "lucide-react";
@@ -19,9 +19,12 @@ export default function Memberstates() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Helmet>
-        <title>Member States - NRSA</title>
-      </Helmet>
+      <SEO
+        title="Member States"
+        description="NRSA member states across Nigeria. Each state has its own rope skipping federation affiliated with the national body, driving grassroots development in their region."
+        path="/member-states"
+        breadcrumbs={[{ name: "Member States", url: "/member-states" }]}
+      />
       {/* Hero Section */}
       <section className="bg-gradient-to-r from-primary to-primary/80 text-white py-20">
         <div className="max-w-7xl mx-auto px-6 md:px-12">

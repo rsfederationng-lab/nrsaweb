@@ -1,21 +1,19 @@
-import React from "react";
-import { Helmet } from "react-helmet-async";
+﻿import React from "react";
+import { SEO } from "@/components/SEO";
 import { SchoolShowcase } from "@/components/SchoolShowcase";
 import { motion } from "framer-motion";
 import { ScrollFade } from "@/components/animations/ScrollFade";
 import { useQuery } from "@tanstack/react-query";
-
 import { UnderstandingInterschool } from "@/components/UnderstandingInterschool";
-
-import { SEO } from "@/components/SEO";
 
 export default function Interschool() {
     return (
         <div className="min-h-screen bg-gradient-to-b from-green-50 to-white pt-20"> {/* pt-20 to account for fixed navbar */}
             <SEO
-                title="National Inter-School Championship Rules (Y-Court)"
-                description="Official rules for the Sub-Standard Match, Y-Court rotation, and school registration for the 2026 season."
-                url="https://nrsa.com.ng/interschool-championship"
+                title="Interschool Championship"
+                description="NRSA National Interschool Rope Skipping Championship — official rules, Y-Court format, school registration, and competition details for the 2026 season across participating states."
+                path="/interschool"
+                breadcrumbs={[{ name: "Interschool", url: "/interschool" }]}
             />
 
             {/* Page Header */}

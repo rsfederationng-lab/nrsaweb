@@ -1,5 +1,5 @@
 import React from "react";
-import { Helmet } from "react-helmet-async";
+import { SEO } from "@/components/SEO";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Target, Eye, Users, Award } from "lucide-react";
@@ -9,9 +9,12 @@ export default function About() {
   const aboutHeroBg = useSiteSetting("about_hero_bg");
   return (
     <div className="min-h-screen bg-background">
-      <Helmet>
-        <title>About Us - NRSA</title>
-      </Helmet>
+      <SEO
+        title="About NRSA"
+        description="Learn about the Nigeria Rope Skipping Association — our mission, vision, history, and the people driving grassroots rope skipping across Nigeria."
+        path="/about"
+        breadcrumbs={[{ name: "About", url: "/about" }]}
+      />
       {/* Hero Section */}
       <section
         className="relative bg-gradient-to-r from-primary to-primary/80 text-white py-20 bg-cover bg-center"

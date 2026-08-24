@@ -1,8 +1,7 @@
-import React from "react";
-import { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { Loader2 } from "lucide-react";
-import { Helmet } from "react-helmet-async";
+import { SEO } from "@/components/SEO";
 import { Card, CardContent } from "@/components/ui/card";
 
 interface Leader {
@@ -45,7 +44,16 @@ export default function LeaderDetail({ id }: { id: string }) {
 
   return (
     <>
-      <Helmet><title>{leader.name} - Leadership Detail</title></Helmet>
+      <SEO
+        title={leader.name}
+        description={leader.bio ? leader.bio.slice(0, 160) : `${leader.name} — ${leader.position} at the Nigeria Rope Skipping Association.`}
+        path={`/leaders/${leader.id}`}
+        pageType="ProfilePage"
+        breadcrumbs={[
+          { name: "Leadership", url: "/leaders" },
+          { name: leader.name, url: `/leaders/${leader.id}` },
+        ]}
+      />
       <div className="max-w-4xl mx-auto p-6">
         <button
           className="mb-6 text-primary underline"

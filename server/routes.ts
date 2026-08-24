@@ -4,9 +4,8 @@ import { supabase } from "./lib/supabase.js";
 import { requireAdmin, requireSuperAdmin, type AdminRequest } from "./authMiddleware.js";
 import bcrypt from "bcrypt";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { sendContactEmails, verifyEmailConnection, sendNewsletterWelcome } from "./mail.js";
-
-// ... imports remain the same
+import { sendContactEmails, verifyEmailConnection, sendNewsletterWelcome, sendSchoolRegistrationConfirmation, sendAdminSchoolRegistrationNotification, sendSchoolSelectionEmail } from "./mail.js";
+import { Express } from "express";
 
 import {
   insertHeroSlideSchema,
@@ -26,68 +25,23 @@ import {
   insertSchoolActivationSchema,
   insertInterschoolNewsSchema,
   insertSubscriberSchema,
+  insertChampionshipPhaseSchema,
+  insertSchoolRegistrationSchema,
+  updateSchoolRegistrationSchema,
   type Admin,
 } from "@shared/schema";
 
-/**
- * Registers all CRUD API routes for the application.
- * Includes endpoints for all entities. Admin protection added where necessary.
- */
 export function registerAllRoutes(app: Express): void {
-  console.log("🔄 [ROUTES] Registering all routes (Version: Fixed Syntax Check)");
-  // Test endpoint
-  app.get("/api/test", (req, res) => {
-    res.json({ status: "API is working - AMBASSADORS_ADDED", timestamp: new Date().toISOString() });
-  });
-
-  // Cache test endpoint
-  app.get("/api/cache-test", (req, res) => {
-    res.json({
-      message: "NEW VERSION DEPLOYED - 4 CARDS WORKING!",
-      timestamp: Date.now(),
-      version: "v2.0-4cards"
-    });
-  });
-
-  // Database connection test
-  app.get("/api/db-test", async (req, res) => {
-    try {
-      if (!supabase) {
-        return res.status(500).json({ error: "Supabase client not initialized" });
-      }
-
-      // Test database connection
-      const { data, error } = await supabase.from('news').select('count').limit(1);
-      if (error) {
-        console.error('Database test error:', error);
-        return res.status(500).json({ error: error.message });
-      }
-
-      res.json({
-        status: "Database connected",
-        supabase: !!supabase,
-        timestamp: new Date().toISOString()
-      });
-    } catch (e: any) {
-      console.error('Database test failed:', e);
-      res.status(500).json({ error: e.message });
-    }
-  });
-
-  // Health check endpoint
-  app.get("/api/health", async (req, res) => {
+  // Health check
+  app.get("/api/health", async (_req, res) => {
     res.json({ status: "ok", timestamp: new Date().toISOString() });
   });
 
-  // Keep-alive endpoint
-  app.get("/health", (req, res) => {
-    res.status(200).send("OK");
-  });
-
-  // Ping endpoint
-  app.get("/ping", (req, res) => {
-    res.status(200).json({ message: "pong", uptime: process.uptime() });
-  });
+  // Keep-alive
+  app.get("/health", (_req, res) => res.status(200).send("OK"));
+  // Keep-alive
+  app.get("/health", (_req, res) => res.status(200).send("OK"));
+  app.get("/ping", (_req, res) => res.status(200).json({ message: "pong", uptime: process.uptime() }));
 
   // ---------- HERO SLIDES ----------
   app.get("/api/hero-slides", async (req, res) => {
@@ -189,12 +143,9 @@ export function registerAllRoutes(app: Express): void {
   // ---------- EVENTS ----------
   app.get("/api/events", async (req, res) => {
     try {
-      console.log('🔍 [EVENTS API] Request received');
       const events = await storage.getAllEvents();
-      console.log('🔍 [EVENTS API] Sending response:', { count: events.length, sample: events[0] });
       res.json(events);
     } catch (e: any) {
-      console.error('🔍 [EVENTS API] Error:', e.message);
       res.status(500).json({ error: e.message });
     }
   });
@@ -286,12 +237,9 @@ export function registerAllRoutes(app: Express): void {
   // ---------- CLUBS ----------
   app.get("/api/clubs", async (req, res) => {
     try {
-      console.log('🔍 [CLUBS API] Request received');
       const clubs = await storage.getAllClubs();
-      console.log('🔍 [CLUBS API] Sending response:', { count: clubs.length, sample: clubs[0] });
       res.json(clubs);
     } catch (e: any) {
-      console.error('🔍 [CLUBS API] Error:', e.message);
       res.status(500).json({ error: e.message });
     }
   });
@@ -574,29 +522,17 @@ export function registerAllRoutes(app: Express): void {
   // ---------- CONTACTS ----------
   app.post("/api/contacts", async (req, res) => {
     try {
-      console.log('🔍 [CONTACT API] Received:', req.body);
-      
       let validatedData;
       try {
         validatedData = insertContactSchema.parse(req.body);
       } catch (validationErr: any) {
-        console.error('🔍 [CONTACT API] Validation error:', validationErr.errors || validationErr.message);
         return res.status(400).json({ error: validationErr.errors?.[0]?.message || validationErr.message });
       }
 
-      let contact;
-      try {
-        contact = await storage.createContact(validatedData);
-      } catch (dbErr: any) {
-        const msg = dbErr?.message || JSON.stringify(dbErr) || "Database error";
-        console.error('🔍 [CONTACT API] DB error:', msg);
-        return res.status(500).json({ error: "Database error: " + msg });
-      }
+      const contact = await storage.createContact(validatedData);
+      if (!contact) return res.status(500).json({ error: "Failed to create contact" });
 
-      if (!contact) return res.status(500).json({ error: "Failed to create contact — storage returned null" });
-      console.log('🔍 [CONTACT API] Created:', contact?.id);
-
-      // Send emails (background — non-blocking)
+      // Send emails in background (non-blocking)
       sendContactEmails({
         name: contact.name,
         email: contact.email,
@@ -604,40 +540,15 @@ export function registerAllRoutes(app: Express): void {
         message: contact.message,
         subject: contact.subject || undefined,
         phone: contact.phone || undefined,
-      }).then(success => {
-        if (success) console.log("✅ [CONTACT API] Emails sent successfully.");
-        else console.error("❌ [CONTACT API] Email sending failed.");
-      }).catch(err => console.error("❌ [CONTACT API] Email error:", err));
-      
+      }).catch((err) => console.error("Email error:", err));
+
       res.status(201).json(contact);
     } catch (e: any) {
-      console.error('🔍 [CONTACT API] Unhandled error:', e);
       res.status(500).json({ error: e?.message || "Unknown server error" });
     }
   });
 
-  // Admin-only endpoints
-  app.get("/api/version", (req, res) => {
-    res.json({
-      version: "1.0.1",
-      timestamp: new Date().toISOString(),
-      desc: "Email Debug Added"
-    });
-  });
-
-  app.get("/api/debug/email", requireAdmin, async (req, res) => {
-    const result = await verifyEmailConnection();
-    res.json({
-      ...result,
-      env: {
-        NODE_ENV: process.env.NODE_ENV,
-        HAS_EMAIL_USER: !!process.env.EMAIL_USER,
-        HAS_EMAIL_PASSWORD: !!process.env.EMAIL_PASSWORD,
-        EMAIL_USER_VALUE: process.env.EMAIL_USER || "USING DEFAULT (rsfederationng@gmail.com)"
-      }
-    });
-  });
-
+  // ---------- CONTACTS ----------
   app.get("/api/contacts", requireAdmin, async (req, res) => {
     try {
       const contacts = await storage.getAllContacts();
@@ -664,13 +575,10 @@ export function registerAllRoutes(app: Express): void {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
-      console.log('🔍 [CONTACT PATCH] Updating contact', id, 'with:', req.body);
       const updated = await storage.updateContact(id, req.body);
       if (!updated) return res.status(404).json({ error: "Contact not found" });
-      console.log('🔍 [CONTACT PATCH] Updated:', updated);
       res.json(updated);
     } catch (e: any) {
-      console.error('🔍 [CONTACT PATCH] Error:', e.message);
       res.status(400).json({ error: e.message });
     }
   });
@@ -699,8 +607,6 @@ export function registerAllRoutes(app: Express): void {
       const affiliation = await storage.createAffiliation(insertAffiliationSchema.parse(req.body));
       res.status(201).json(affiliation);
     } catch (e: any) {
-      console.error("Values:", req.body);
-      console.error("Error creating affiliation:", e);
       res.status(500).json({ error: e.message });
     }
   });
@@ -789,7 +695,6 @@ export function registerAllRoutes(app: Express): void {
 
 
   // ---------- AMBASSADORS ----------
-  console.log("Registering Ambassador routes..."); // Debug log to confirm reload
   app.get("/api/ambassadors", async (req, res) => {
     try {
       const ambassadors = await storage.getAllAmbassadors();
@@ -851,19 +756,14 @@ export function registerAllRoutes(app: Express): void {
 
   app.post("/api/interschool-years", requireAdmin, async (req, res) => {
     try {
-      console.log('POST /api/interschool-years Body:', req.body);
-
       const parsed = insertInterschoolYearSchema.safeParse(req.body);
       if (!parsed.success) {
-        console.error('Validation Error:', parsed.error);
         return res.status(400).json({ error: "Validation failed", details: parsed.error });
       }
 
       const year = await storage.createInterschoolYear(parsed.data);
-      console.log('Created Year:', year);
       res.status(201).json(year);
     } catch (e: any) {
-      console.error('POST /api/interschool-years Error:', e);
       if (e.message?.includes("unique constraint")) {
         return res.status(400).json({ error: "Season with this year already exists." });
       }
@@ -876,14 +776,10 @@ export function registerAllRoutes(app: Express): void {
       const id = parseInt(req.params.id);
       if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
 
-      console.log(`[PATCH] Interschool Year ${id} - Body:`, req.body);
-
-      // Remove ID and metadata from body to prevent validation errors
       const { id: _id, createdAt, ...cleanBody } = req.body;
 
       const parsed = insertInterschoolYearSchema.partial().safeParse(cleanBody);
       if (!parsed.success) {
-        console.error('Validation Error:', parsed.error);
         return res.status(400).json({ error: "Validation failed", details: parsed.error });
       }
 
@@ -891,7 +787,6 @@ export function registerAllRoutes(app: Express): void {
       if (!year) return res.status(404).json({ error: "Year not found" });
       res.json(year);
     } catch (e: any) {
-      console.error('PATCH /api/interschool-years/:id Error:', e);
       res.status(400).json({ error: e.message });
     }
   });
@@ -900,12 +795,9 @@ export function registerAllRoutes(app: Express): void {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
-
-      console.log(`[DELETE] Interschool Year ${id}`);
       await storage.deleteInterschoolYear(id);
       res.status(204).send();
     } catch (e: any) {
-      console.error('DELETE /api/interschool-years/:id Error:', e);
       res.status(500).json({ error: e.message });
     }
   });
@@ -1016,6 +908,297 @@ export function registerAllRoutes(app: Express): void {
       await storage.deleteInterschoolNews(id);
       res.status(204).send();
     } catch (e: any) { res.status(500).json({ error: e.message }); }
+  });
+
+  // ---------- CHAMPIONSHIP PHASES ----------
+  app.get("/api/championship-phases", async (req, res) => {
+    try {
+      const yearId = parseInt(req.query.yearId as string);
+      if (isNaN(yearId)) return res.status(400).json({ error: "Missing or invalid yearId" });
+      const phases = await storage.getChampionshipPhasesByYear(yearId);
+      res.json(phases);
+    } catch (e: any) { res.status(500).json({ error: e.message }); }
+  });
+
+  app.get("/api/championship-phases/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
+      const phase = await storage.getChampionshipPhase(id);
+      if (!phase) return res.status(404).json({ error: "Phase not found" });
+      res.json(phase);
+    } catch (e: any) { res.status(500).json({ error: e.message }); }
+  });
+
+  app.post("/api/championship-phases", requireAdmin, async (req, res) => {
+    try {
+      const phase = await storage.createChampionshipPhase(insertChampionshipPhaseSchema.parse(req.body));
+      res.status(201).json(phase);
+    } catch (e: any) { res.status(400).json({ error: e.message }); }
+  });
+
+  app.patch("/api/championship-phases/:id", requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
+      const phase = await storage.updateChampionshipPhase(id, insertChampionshipPhaseSchema.partial().parse(req.body));
+      if (!phase) return res.status(404).json({ error: "Phase not found" });
+      res.json(phase);
+    } catch (e: any) { res.status(400).json({ error: e.message }); }
+  });
+
+  app.delete("/api/championship-phases/:id", requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
+      await storage.deleteChampionshipPhase(id);
+      res.status(204).send();
+    } catch (e: any) { res.status(500).json({ error: e.message }); }
+  });
+
+  // ---------- SCHOOL REGISTRATIONS ----------
+  app.get("/api/school-registrations", requireAdmin, async (req, res) => {
+    try {
+      const phaseId = req.query.phaseId ? parseInt(req.query.phaseId as string) : undefined;
+      const yearId = req.query.yearId ? parseInt(req.query.yearId as string) : undefined;
+      
+      if (phaseId) {
+        const registrations = await storage.getSchoolRegistrationsByPhase(phaseId);
+        return res.json(registrations);
+      }
+      
+      if (yearId) {
+        const registrations = await storage.getSchoolRegistrationsByYear(yearId);
+        return res.json(registrations);
+      }
+      
+      const allRegistrations = await storage.getAllSchoolRegistrations();
+      res.json(allRegistrations);
+    } catch (e: any) { res.status(500).json({ error: e.message }); }
+  });
+
+  app.get("/api/school-registrations/:id", requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
+      const registration = await storage.getSchoolRegistration(id);
+      if (!registration) return res.status(404).json({ error: "Registration not found" });
+      res.json(registration);
+    } catch (e: any) { res.status(500).json({ error: e.message }); }
+  });
+
+  app.post("/api/school-registrations", async (req, res) => {
+    try {
+      console.log('Registration request body:', JSON.stringify(req.body, null, 2));
+      
+      // Auto-assign yearId and phaseId if not provided
+      let data = { ...req.body };
+
+      // Strip any NaN / null / invalid values that may have slipped through the client
+      const toValidId = (v: any) => {
+        if (v === undefined || v === null) return undefined;
+        const n = Number(v);
+        return isNaN(n) || n <= 0 ? undefined : n;
+      };
+      data.yearId  = toValidId(data.yearId);
+      data.phaseId = toValidId(data.phaseId);
+      
+      // Get active season if yearId not provided
+      if (!data.yearId) {
+        const years = await storage.getAllInterschoolYears();
+        const activeYear = years.find((y: any) => y.isActive) || years[0];
+        if (activeYear) {
+          data.yearId = activeYear.id;
+          console.log('Auto-assigned yearId:', activeYear.id);
+        } else {
+          return res.status(400).json({ error: "No active season found. Please create a season first." });
+        }
+      }
+      
+      // Get or create phase for the state if phaseId not provided
+      if (!data.phaseId && data.state && data.yearId) {
+        const phases = await storage.getChampionshipPhasesByYear(data.yearId);
+        let statePhase = phases.find((p: any) => p.stateName === data.state);
+        
+        // If no phase exists for this state, create one
+        if (!statePhase) {
+          console.log('Creating new phase for state:', data.state);
+          statePhase = await storage.createChampionshipPhase({
+            yearId: data.yearId,
+            stateName: data.state,
+            maxSchools: 9,
+          });
+        }
+        
+        data.phaseId = statePhase.id;
+        console.log('Assigned phaseId:', statePhase.id);
+      }
+      
+      console.log('Final data before validation:', JSON.stringify(data, null, 2));
+
+      // Verify we have valid IDs before handing off to Zod
+      if (!data.yearId || !data.phaseId) {
+        console.error('Missing IDs after auto-assign — yearId:', data.yearId, 'phaseId:', data.phaseId);
+        return res.status(400).json({ error: "Could not determine season or phase. Please try again." });
+      }
+
+      const validatedData = insertSchoolRegistrationSchema.parse(data);
+      const registration = await storage.createSchoolRegistration(validatedData);
+      if (!registration) return res.status(500).json({ error: "Failed to create registration" });
+
+      // Send confirmation email in background — don't block the response
+      const phaseName = `${data.state} State`;
+      sendSchoolRegistrationConfirmation({
+        schoolName: registration.schoolName,
+        coordinatorName: registration.coordinatorName,
+        coordinatorEmail: registration.email,
+        phase: phaseName,
+        state: registration.state,
+      }).catch((err: any) => console.error('Failed to send registration confirmation email:', err));
+
+      sendAdminSchoolRegistrationNotification({
+        schoolName: registration.schoolName,
+        coordinatorName: registration.coordinatorName,
+        email: registration.email,
+        phone: registration.coordinatorPhone,
+        whatsappNumber: registration.whatsappNumber,
+        phase: phaseName,
+        state: registration.state,
+        athleteCount: registration.athleteCount,
+        category: registration.category,
+        registrationId: registration.id,
+      }).catch((err: any) => console.error('Failed to send admin notification email:', err));
+      
+      res.status(201).json(registration);
+    } catch (e: any) {
+      console.error('Registration error:', e);
+      console.error('Error details:', e.message);
+      if (e.errors) {
+        console.error('Validation errors:', JSON.stringify(e.errors, null, 2));
+      }
+      // Return a human-readable message — Zod errors are arrays, not strings
+      const message =
+        e.errors?.[0]?.message ||
+        (typeof e.message === 'string' && !e.message.startsWith('[') ? e.message : 'Registration failed. Please check your details.');
+      res.status(400).json({ error: message });
+    }
+  });
+
+  app.patch("/api/school-registrations/:id", requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
+
+      // Grab the current record so we know the previous status and have contact details
+      const existing = await storage.getSchoolRegistration(id);
+      if (!existing) return res.status(404).json({ error: "Registration not found" });
+
+      const validatedData = updateSchoolRegistrationSchema.parse(req.body);
+      const registration = await storage.updateSchoolRegistration(id, validatedData);
+      if (!registration) return res.status(404).json({ error: "Registration not found" });
+
+      // Send an email whenever status changes to selected or not_selected
+      const newStatus = validatedData.status;
+      const prevStatus = existing.status;
+      if (newStatus && newStatus !== prevStatus && (newStatus === "selected" || newStatus === "not_selected")) {
+        // Fetch phase for venue/date details
+        const phase = await storage.getChampionshipPhase(registration.phaseId);
+        const phaseName = phase?.stateName ? `${phase.stateName} State` : "State";
+
+        sendSchoolSelectionEmail({
+          schoolName: registration.schoolName,
+          coordinatorName: registration.coordinatorName,
+          coordinatorEmail: registration.email,
+          phase: phaseName,
+          state: registration.state,
+          venue: phase?.venue || "To be announced",
+          competitionDate: phase?.competitionDate
+            ? new Date(phase.competitionDate).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })
+            : "To be announced",
+          whatsappGroupLink: phase?.whatsappGroupLink || undefined,
+          isSelected: newStatus === "selected",
+        }).catch((err: any) => console.error("Failed to send selection email:", err));
+      }
+
+      res.json(registration);
+    } catch (e: any) { res.status(400).json({ error: e.message }); }
+  });
+
+  app.delete("/api/school-registrations/:id", requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
+      await storage.deleteSchoolRegistration(id);
+      res.status(204).send();
+    } catch (e: any) { res.status(500).json({ error: e.message }); }
+  });
+
+  // Batch notify selected schools for a phase
+  app.post("/api/championship-phases/:id/notify-selected", requireAdmin, async (req, res) => {
+    try {
+      const phaseId = parseInt(req.params.id);
+      if (isNaN(phaseId)) return res.status(400).json({ error: "Invalid phase ID" });
+
+      const [registrations, phase] = await Promise.all([
+        storage.getSchoolRegistrationsByPhase(phaseId),
+        storage.getChampionshipPhase(phaseId),
+      ]);
+
+      const phaseName = phase?.stateName ? `${phase.stateName} State` : "State";
+      const venue = phase?.venue || "To be announced";
+      const competitionDate = phase?.competitionDate
+        ? new Date(phase.competitionDate).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })
+        : "To be announced";
+      const whatsappGroupLink = phase?.whatsappGroupLink || undefined;
+
+      const selectedSchools    = registrations.filter((r: any) => r.status === "selected");
+      const notSelectedSchools = registrations.filter((r: any) => r.status === "not_selected");
+
+      // Fire all emails in parallel, collect results
+      const emailJobs = [
+        ...selectedSchools.map((r: any) =>
+          sendSchoolSelectionEmail({
+            schoolName: r.schoolName,
+            coordinatorName: r.coordinatorName,
+            coordinatorEmail: r.email,
+            phase: phaseName,
+            state: r.state,
+            venue,
+            competitionDate,
+            whatsappGroupLink,
+            isSelected: true,
+          }).catch((err: any) => {
+            console.error(`Failed to email selected school ${r.schoolName}:`, err);
+            return null;
+          })
+        ),
+        ...notSelectedSchools.map((r: any) =>
+          sendSchoolSelectionEmail({
+            schoolName: r.schoolName,
+            coordinatorName: r.coordinatorName,
+            coordinatorEmail: r.email,
+            phase: phaseName,
+            state: r.state,
+            venue,
+            competitionDate,
+            isSelected: false,
+          }).catch((err: any) => {
+            console.error(`Failed to email not-selected school ${r.schoolName}:`, err);
+            return null;
+          })
+        ),
+      ];
+
+      await Promise.all(emailJobs);
+
+      res.json({
+        message: "Notifications sent",
+        selected: selectedSchools.length,
+        notSelected: notSelectedSchools.length,
+      });
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
   });
 
   // ---------- ADMINS ----------

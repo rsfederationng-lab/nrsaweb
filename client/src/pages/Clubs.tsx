@@ -1,6 +1,6 @@
 import React from "react";
 import { OptimizedImage } from "@/components/OptimizedImage";
-import { Helmet } from "react-helmet-async";
+import { SEO } from "@/components/SEO";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, User, Phone, Mail } from "lucide-react";
@@ -21,9 +21,12 @@ export default function Clubs() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Helmet>
-        <title>Registered Clubs - NRSA</title>
-      </Helmet>
+      <SEO
+        title="Registered Clubs"
+        description="Find NRSA-registered rope skipping clubs across Nigeria. Connect with your local club, join training programmes, and compete at state and national level."
+        path="/clubs"
+        breadcrumbs={[{ name: "Clubs", url: "/clubs" }]}
+      />
       {/* Hero Section */}
       <section className="bg-gradient-to-r from-primary to-primary/80 text-white py-20">
         <div className="max-w-7xl mx-auto px-6 md:px-12">

@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Helmet } from "react-helmet-async";
+﻿import React, { useState } from "react";
+import { SEO } from "@/components/SEO";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -12,7 +12,6 @@ import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import type { Ambassador } from "@/types/schema";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { SEO } from "@/components/SEO";
 
 
 export default function Partnership() {
@@ -43,9 +42,12 @@ export default function Partnership() {
 
     return (
         <div className="min-h-screen bg-background text-foreground animate-in fade-in duration-500">
-            <Helmet>
-                <title>Partnership - NRSA</title>
-            </Helmet>
+            <SEO
+              title="Partnership & Sponsorship"
+              description="Partner with the Nigeria Rope Skipping Association. Explore sponsorship tiers, brand exposure opportunities, and how your organisation can support the growth of rope skipping in Nigeria."
+              path="/partnership"
+              breadcrumbs={[{ name: "Partnership", url: "/partnership" }]}
+            />
 
             {/* Header / Hero */}
             <section className="relative h-[80vh] min-h-[600px] flex items-center justify-center overflow-hidden bg-black text-white">

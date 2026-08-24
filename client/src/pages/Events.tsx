@@ -1,5 +1,5 @@
 import React from "react";
-import { Helmet } from "react-helmet-async";
+import { SEO } from "@/components/SEO";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -18,9 +18,12 @@ export default function Events() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Helmet>
-        <title>Upcoming Events - NRSA</title>
-      </Helmet>
+      <SEO
+        title="Upcoming Events"
+        description="Stay up to date with NRSA events — national championships, regional competitions, training workshops, and rope skipping festivals across Nigeria."
+        path="/events"
+        breadcrumbs={[{ name: "Events", url: "/events" }]}
+      />
       {/* Hero Section */}
       <section className="bg-gradient-to-r from-primary to-primary/80 text-white py-20">
         <div className="max-w-7xl mx-auto px-6 md:px-12">

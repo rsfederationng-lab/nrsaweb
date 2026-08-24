@@ -139,7 +139,7 @@ export function Navbar() {
                                         <ListItem href="/events" title="Calendar">
                                             Upcoming events and championships.
                                         </ListItem>
-                                        <ListItem href="/interschool-championship" title="Interschool Championship">
+                                        <ListItem href="/interschool" title="Interschool Championship">
                                             School rankings and activation updates.
                                         </ListItem>
                                         <ListItem href="/competitions" title="Competition System">
@@ -248,7 +248,7 @@ export function Navbar() {
                                 <AccordionContent className="flex flex-col space-y-2 pl-4">
                                     <MobileLink href="/players" onClick={() => setIsOpen(false)}>National Athletes</MobileLink>
                                     <MobileLink href="/events" onClick={() => setIsOpen(false)}>Calendar</MobileLink>
-                                    <MobileLink href="/interschool-championship" onClick={() => setIsOpen(false)}>Interschool Championship</MobileLink>
+                                    <MobileLink href="/interschool" onClick={() => setIsOpen(false)}>Interschool Championship</MobileLink>
                                     <MobileLink href="/competitions" onClick={() => setIsOpen(false)}>Competition System</MobileLink>
                                     <a href="https://skippers.nrsa.com.ng" target="_blank" rel="noopener noreferrer" className="block py-2 text-base text-muted-foreground hover:text-primary transition-colors" onClick={() => setIsOpen(false)}>Results</a>
                                 </AccordionContent>

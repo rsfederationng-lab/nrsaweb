@@ -32,6 +32,7 @@ import { Plus, Trash2, Trophy, FileText } from "lucide-react";
 import { queryClient } from "@/lib/queryClient";
 import { ImageUpload } from "@/components/admin/ImageUpload";
 import { Link } from "wouter";
+import { PhaseRegistrationManager } from "@/components/admin/PhaseRegistrationManager";
 
 // Types matching the schema
 interface InterschoolYear {
@@ -43,7 +44,6 @@ interface InterschoolYear {
     videoUrl?: string; // Optional
     description?: string; // Optional
     aboutImageUrl?: string; // Optional
-    registrationUrl?: string; // Optional
 }
 
 interface SchoolStanding {
@@ -97,16 +97,12 @@ export default function AdminInterschool() {
     });
 
     const [videoUrl, setVideoUrl] = useState("");
-    const [registrationUrl, setRegistrationUrl] = useState("");
 
     // Update local state when settings load
     useEffect(() => {
         if (siteSettings) {
             const videoSetting = siteSettings.find((s: any) => s.key === "interschool_video_url");
             if (videoSetting) setVideoUrl(videoSetting.value);
-
-            const regSetting = siteSettings.find((s: any) => s.key === "interschool_registration_url");
-            if (regSetting) setRegistrationUrl(regSetting.value);
         }
     }, [siteSettings]);
 
@@ -324,18 +320,6 @@ export default function AdminInterschool() {
                                 />
                             </div>
 
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium">Registration Link (Optional)</label>
-                                <Input
-                                    placeholder="https://forms.google.com/..."
-                                    value={newYear.registrationUrl || ""}
-                                    onChange={(e) => setNewYear({ ...newYear, registrationUrl: e.target.value })}
-                                />
-                                <p className="text-xs text-muted-foreground">
-                                    Add a registration form link that will appear on the public interschool page
-                                </p>
-                            </div>
-
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <ImageUpload
@@ -451,26 +435,6 @@ export default function AdminInterschool() {
                         </div>
                         <Button
                             onClick={() => updateSettingMutation.mutate({ key: "interschool_video_url", value: videoUrl })}
-                            disabled={updateSettingMutation.isPending}
-                        >
-                            {updateSettingMutation.isPending ? "Saving..." : "Save"}
-                        </Button>
-                    </div>
-
-                    <div className="flex gap-4 items-end">
-                        <div className="flex-1 space-y-2">
-                            <Label>Default Registration URL (Global Fallback)</Label>
-                            <Input
-                                placeholder="https://forms.google.com/..."
-                                value={registrationUrl}
-                                onChange={(e) => setRegistrationUrl(e.target.value)}
-                            />
-                            <p className="text-xs text-muted-foreground">
-                                This link will be used if the active season does not have a specific registration link.
-                            </p>
-                        </div>
-                        <Button
-                            onClick={() => updateSettingMutation.mutate({ key: "interschool_registration_url", value: registrationUrl })}
                             disabled={updateSettingMutation.isPending}
                         >
                             {updateSettingMutation.isPending ? "Saving..." : "Save"}
@@ -705,6 +669,9 @@ export default function AdminInterschool() {
                     </p>
                 </div>
             )}
+
+            {/* Phase & Registration Management */}
+            {selectedYearId && <PhaseRegistrationManager selectedYearId={selectedYearId} />}
         </div>
     );
 }

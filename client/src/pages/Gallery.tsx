@@ -1,5 +1,5 @@
 import React from "react";
-import { Helmet } from "react-helmet-async";
+import { SEO } from "@/components/SEO";
 import { useState, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -46,9 +46,12 @@ export default function Gallery() {
 
     return (
         <div className="min-h-screen bg-background">
-            <Helmet>
-                <title>Photo Gallery - NRSA</title>
-            </Helmet>
+            <SEO
+              title="Photo Gallery"
+              description="Browse the NRSA photo gallery — official images from national championships, training sessions, and rope skipping events across Nigeria."
+              path="/gallery"
+              breadcrumbs={[{ name: "Gallery", url: "/gallery" }]}
+            />
             {/* Hero Section */}
             <section className="bg-gradient-to-r from-primary to-primary/80 text-white py-20">
                 <div className="max-w-7xl mx-auto px-6 md:px-12">

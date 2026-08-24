@@ -28,6 +28,7 @@ import Contact from "@/pages/Contact";
 import Partnership from "@/pages/Partnership";
 import History from "@/pages/History";
 import Interschool from "@/pages/Interschool";
+import InterschoolRegister from "@/pages/InterschoolRegister";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import TermsOfService from "@/pages/TermsOfService";
 
@@ -195,8 +196,11 @@ export default function App() {
             <Route path="/contact">
               <PageWithLayout><Contact /></PageWithLayout>
             </Route>
-            <Route path="/interschool-championship">
+            <Route path="/interschool">
               <PageWithLayout><Interschool /></PageWithLayout>
+            </Route>
+            <Route path="/interschool/register">
+              <PageWithLayout><InterschoolRegister /></PageWithLayout>
             </Route>
             <Route path="/privacy-policy">
               <PageWithLayout><PrivacyPolicy /></PageWithLayout>

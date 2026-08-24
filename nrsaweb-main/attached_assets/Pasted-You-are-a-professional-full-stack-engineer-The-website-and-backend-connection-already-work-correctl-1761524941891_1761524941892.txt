@@ -1,0 +1,89 @@
+You are a professional full-stack engineer.
+The website and backend connection already work correctly. The admin portal and frontend are connected, and most updates function. However, several fixes are still required for a complete and smooth experience.
+
+Your task: Review the full project and fix the following issues across the backend and frontend:
+
+🔧 1. Admin Portal Update Functionality
+
+The Club page updates correctly, but Event, Player, and other admin sections do not update properly.
+
+Ensure that add, edit, update, delete work perfectly in all admin pages (Player, Event, Leader, News, Media, etc.).
+
+Make sure every change reflects on the frontend immediately after being saved.
+
+Keep all existing connections and structures (backend routes, controllers, and models) intact.
+
+📰 2. News Frontend Page
+
+Make every news item clickable to open a “Read More” page showing full news details (title, date, image, description, content).
+
+Use the same pattern or routing logic used for the “Leader” detail page for consistency.
+
+💬 3. Admin Dashboard — Messages
+
+When a user sends a message from the frontend contact form, it appears in the admin dashboard.
+
+Fix the issue where the admin cannot click to view the full message.
+
+Create a modal or separate page where each message can be viewed fully (name, email, subject, message content, timestamp).
+
+🎟️ 4. Event Registration Button
+
+On the frontend, each event shows a “Register Now” button, but it’s currently not clickable.
+
+Update the admin event form so that when creating or editing an event, there’s an optional input field for a registration link (URL).
+
+If a registration link is added, the “Register Now” button on the frontend should open that link in a new tab.
+
+If no link is added, the button should not appear.
+
+⚽ 5. Club Page Cleanup
+
+Remove the “Contact Club” option on the frontend club page — it’s unnecessary.
+
+Ensure the club display remains clean and functional (name, logo, details, players, etc.).
+
+🎥 6. Media Page Enhancement
+
+In the admin media upload form, add a dropdown field called “Category” with options such as:
+
+Training
+
+Achievement
+
+Event
+
+Announcement
+
+Save the selected category to the database.
+
+On the frontend, display media items grouped or filtered by category.
+
+⚙️ 7. General Performance & UX
+
+Optimize all CRUD requests (fetch, add, update, delete) to ensure fast, error-free performance.
+
+Handle loading and error states gracefully with messages like “Saving…”, “Updated successfully”, or “Failed to update”.
+
+Test all admin actions to confirm they reflect properly on the frontend.
+
+Ensure the design and data handling remain consistent across all pages (admin and frontend).
+
+Goal:
+
+After this update, every admin function should work (add, edit, delete, update).
+
+News and Messages should open in detail view.
+
+Event registration links should work as intended.
+
+Media should support categorized uploads.
+
+The website should run smoothly without breaking backend connections or frontend logic.
+
+Keep all existing functionality; just fix, improve, and unify the structure and flow.
+
+💡 Tip:
+Make sure Replit AI is running in the root folder where your /server (or /backend) and /frontend (or /src) folders exist.
+
+Would you like me to ta

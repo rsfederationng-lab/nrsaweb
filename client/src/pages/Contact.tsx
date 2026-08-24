@@ -1,5 +1,5 @@
 import React from "react";
-import { Helmet } from "react-helmet-async";
+import { SEO } from "@/components/SEO";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -94,7 +94,12 @@ export default function Contact() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* ... Helmet and Hero section ... */}
+      <SEO
+        title="Contact Us"
+        description="Get in touch with the Nigeria Rope Skipping Association. Send us a message, partnership enquiry, or registration question and we'll respond promptly."
+        path="/contact"
+        breadcrumbs={[{ name: "Contact", url: "/contact" }]}
+      />
 
       <section className="py-20">
         <div className="max-w-7xl mx-auto px-6 md:px-12">

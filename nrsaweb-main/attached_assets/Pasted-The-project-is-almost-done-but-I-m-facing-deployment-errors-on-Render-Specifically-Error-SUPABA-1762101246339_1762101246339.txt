@@ -1,0 +1,68 @@
+The project is almost done, but I’m facing deployment errors on Render. Specifically:
+
+Error: SUPABASE_URL and SUPABASE_DB_PASSWORD must be set
+
+
+I want you to fix everything completely and make the project production-ready with Supabase.
+
+Here’s what you should do:
+
+🔧 1. Environment Variables and Supabase Setup
+
+Ensure all required Supabase environment variables are properly handled and loaded both locally and in production:
+
+SUPABASE_URL
+
+SUPABASE_ANON_KEY
+
+SUPABASE_SERVICE_ROLE_KEY
+
+SUPABASE_DB_PASSWORD
+
+Add a safe fallback mechanism so that if any of these are missing, the app logs a clear warning and doesn’t crash.
+
+Update dist/index.js or its config source to read these from process.env using best practices for Render or Vercel environments.
+
+If needed, use a .env.production file pattern or check for Render-specific environment variable behavior.
+
+🧠 2. Supabase Integration
+
+Make sure the backend connects correctly to Supabase’s database, authentication, and storage.
+
+Verify the schema matches the NRSA project’s existing data models.
+
+Ensure the default admin user (automatically created, non-editable, and non-deletable) is fully functional through Supabase Auth.
+
+Ensure all routes, API endpoints, and database queries now work with Supabase.
+
+📦 3. Media & Storage
+
+Make Supabase Storage the default for uploads.
+
+If an external link (like YouTube) is provided for media, it should open in a new tab (redirect).
+
+Ensure uploads, retrieval, and media previews all work in production.
+
+🚀 4. Production Deployment & Build Fixes
+
+Fix all Render deployment errors, including environment variable access, connection strings, and build paths.
+
+Ensure dist/index.js runs properly in production mode (NODE_ENV=production).
+
+Fix any TypeScript, import, or Vite build errors if they appear.
+
+Make sure the site builds cleanly and runs automatically after deployment.
+
+🧩 5. Strict Rule
+
+Do not modify any design, colors, styles, or UI elements.
+
+Only work on backend, configuration, and integration.
+
+After finishing:
+
+Summarize what you fixed and why.
+
+Confirm that the project now runs smoothly on Render with all Supabase features working.
+
+The goal is a stable, production-ready version of the NRSA website that’s fully integrated with Supabase, with no broken connections or missing variables.

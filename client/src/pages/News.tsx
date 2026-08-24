@@ -1,6 +1,6 @@
 import React from "react";
 import { OptimizedImage } from "@/components/OptimizedImage";
-import { Helmet } from "react-helmet-async";
+import { SEO } from "@/components/SEO";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar } from "lucide-react";
@@ -23,9 +23,12 @@ export default function News() {
     console.error('News fetch error:', error);
     return (
       <div className="min-h-screen bg-background">
-        <Helmet>
-          <title>Latest News - NRSA</title>
-        </Helmet>
+        <SEO
+          title="Latest News"
+          description="Read the latest news from NRSA — competition results, athlete spotlights, association announcements, and rope skipping updates from across Nigeria."
+          path="/news"
+          breadcrumbs={[{ name: "News", url: "/news" }]}
+        />
         <section className="bg-gradient-to-r from-primary to-primary/80 text-white py-20">
           <div className="max-w-7xl mx-auto px-6 md:px-12">
             <h1 className="text-4xl md:text-6xl font-bold mb-6">Latest News</h1>
@@ -53,9 +56,12 @@ export default function News() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Helmet>
-        <title>Latest News - NRSA</title>
-      </Helmet>
+      <SEO
+        title="Latest News"
+        description="Read the latest news from NRSA — competition results, athlete spotlights, association announcements, and rope skipping updates from across Nigeria."
+        path="/news"
+        breadcrumbs={[{ name: "News", url: "/news" }]}
+      />
       {/* Hero Section */}
       <section className="bg-gradient-to-r from-primary to-primary/80 text-white py-20">
         <div className="max-w-7xl mx-auto px-6 md:px-12">

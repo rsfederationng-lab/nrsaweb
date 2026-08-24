@@ -28,6 +28,7 @@ const defaultSlides = [
   { imageUrl: photo11, headline: "National Pride", subheadline: "Representing Nigeria on the Global Stage" },
 ];
 
+
 export function HeroCarousel() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const slides = defaultSlides;

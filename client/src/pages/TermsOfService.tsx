@@ -1,14 +1,17 @@
-import React from "react";
-import { Helmet } from "react-helmet-async";
+﻿import React from "react";
+import { SEO } from "@/components/SEO";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollFade } from "@/components/animations/ScrollFade";
 
 export default function TermsOfService() {
   return (
     <div className="min-h-screen bg-background">
-      <Helmet>
-        <title>Terms of Service - NRSA</title>
-      </Helmet>
+      <SEO
+        title="Terms of Service"
+        description="Read the NRSA Terms of Service — the rules, responsibilities, and conditions governing use of the Nigeria Rope Skipping Association website and services."
+        path="/terms-of-service"
+        pageType="WebPage"
+      />
 
       {/* Hero Section */}
       <section className="relative bg-gradient-to-r from-primary to-primary/80 text-white py-16">

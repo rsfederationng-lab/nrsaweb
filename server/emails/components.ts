@@ -20,8 +20,7 @@ export function Footer(): string {
         <a href="${emailConfig.social.facebook}" style="color: ${brand.colors.primary}; text-decoration: none; margin: 0 8px; font-weight: bold;">Facebook</a>
       </div>
       <p style="color: ${brand.colors.text.muted}; font-size: 13px; margin: 0 0 8px 0; line-height: 1.5;">
-        <strong>${brand.name}</strong><br>
-        ${emailConfig.contact.address}
+        <strong>${brand.name}</strong>
       </p>
       <p style="color: ${brand.colors.text.muted}; font-size: 12px; margin: 0;">
         &copy; ${year} ${brand.name}. All rights reserved.<br>

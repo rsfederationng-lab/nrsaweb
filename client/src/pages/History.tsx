@@ -1,5 +1,5 @@
 import React from "react";
-import { Helmet } from "react-helmet-async";
+import { SEO } from "@/components/SEO";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { History as HistoryIcon, Globe, Trophy, TrendingUp, Award } from "lucide-react";
@@ -7,9 +7,12 @@ import { History as HistoryIcon, Globe, Trophy, TrendingUp, Award } from "lucide
 export default function History() {
     return (
         <div className="min-h-screen bg-background">
-            <Helmet>
-                <title>Our History - NRSA</title>
-            </Helmet>
+            <SEO
+              title="NRSA History"
+              description="Discover the history of rope skipping in Nigeria — from NRSA's founding to international affiliations with IJRU and IRSO, and our journey to becoming Africa's leading rope skipping body."
+              path="/history"
+              breadcrumbs={[{ name: "History", url: "/history" }]}
+            />
 
             {/* Hero Section */}
             <section className="bg-gradient-to-r from-primary to-primary/80 text-white py-20">

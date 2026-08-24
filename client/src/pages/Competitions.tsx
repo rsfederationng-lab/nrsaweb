@@ -1,5 +1,5 @@
 import React from "react";
-import { Helmet } from "react-helmet-async";
+import { SEO } from "@/components/SEO";
 import { Trophy, Users, Target, Calendar, Award } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -7,9 +7,12 @@ import { Badge } from '@/components/ui/badge';
 export default function Competitions() {
   return (
     <div>
-      <Helmet>
-        <title>Competitions & Y-Court - NRSA</title>
-      </Helmet>
+      <SEO
+        title="Competitions & Y-Court"
+        description="Explore NRSA competitions including Y-Court, the National Alpha League, and school championships. Find out how to enter and what to expect at each level."
+        path="/competitions"
+        breadcrumbs={[{ name: "Competitions", url: "/competitions" }]}
+      />
       {/* Page Header */}
       <section className="bg-gradient-to-r from-primary to-primary/80 text-white py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">

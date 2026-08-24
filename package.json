@@ -5,29 +5,15 @@
   "license": "MIT",
   "scripts": {
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
-    "dev:server": "cross-env NODE_ENV=development tsx server/index.ts",
+    "dev:server": "cross-env NODE_ENV=development tsx watch server/index.ts",
     "dev:client": "vite",
-    "dev:clean": "vite --force",
-    "clean": "rmdir /s /q node_modules\\.vite 2>nul || echo done",
     "build:client": "cross-env NODE_ENV=production vite build --mode production",
     "build:server": "vite build --config vite.config.server.js --mode production",
     "build": "npm run build:client && npm run build:server",
-    "vercel:build": "npm run build:client && npm run build:vercel-api",
-    "build:vercel-api": "vite build --config vite.config.vercel.js --mode production",
-    "build:prod": "NODE_ENV=production npm run build:client && npm run build:server",
     "start": "NODE_ENV=production node dist/server/index.js",
     "check": "tsc",
     "db:push": "drizzle-kit push --force",
-    "drizzle:push": "drizzle-kit push",
-    "cache:clear": "rmdir /s /q node_modules\\.vite dist 2>nul || echo done",
-    "db:init": "npm run db:push",
-    "db:test": "tsx server/testDb.ts",
-    "test:all": "tsx server/testAll.ts",
-    "setup-admin": "tsx server/setupSuperAdmin.ts",
-    "test:crud": "tsx server/scripts/testCRUD.ts",
-    "disable-rls": "tsx server/scripts/disableRLS.ts",
-    "deploy:cpanel": "npm run build:client && xcopy /E /I /Y dist\\public\\* public_html\\",
-    "package:backend": "npm run build:server && npm pack"
+    "setup-admin": "tsx server/setupSuperAdmin.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.917.0",
@@ -117,9 +103,7 @@
     "zod-validation-error": "^3.4.0"
   },
   "devDependencies": {
-    "@replit/vite-plugin-cartographer": "^0.3.1",
-    "@replit/vite-plugin-dev-banner": "^0.1.1",
-    "@replit/vite-plugin-runtime-error-modal": "^0.0.3",
+
     "@tailwindcss/typography": "^0.5.15",
     "@types/bcrypt": "^6.0.0",
     "@types/compression": "^1.7.5",

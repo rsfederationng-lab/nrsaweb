@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useQuery } from "@tanstack/react-query";
 import type { Player } from "@/types/schema";
 import { AthleteCard } from "@/components/AthleteCard";
+import { SEO } from "@/components/SEO";
 
 export default function Players() {
   const { data: players = [], isLoading, error } = useQuery<Player[]>({
@@ -15,6 +16,12 @@ export default function Players() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Nigerian Athletes"
+        description="Meet Nigeria's top rope skipping athletes. NRSA-registered players competing in national and international championships representing Nigeria."
+        path="/players"
+        breadcrumbs={[{ name: "Athletes", url: "/players" }]}
+      />
       {/* Hero Section */}
       <section className="bg-gradient-to-r from-primary to-primary/80 text-white py-20">
         <div className="max-w-7xl mx-auto px-6 md:px-12">

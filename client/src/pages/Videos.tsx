@@ -1,5 +1,5 @@
-import React from "react";
-import { Helmet } from "react-helmet-async";
+﻿import React from "react";
+import { SEO } from "@/components/SEO";
 import { useState, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -44,9 +44,12 @@ export default function Videos() {
 
     return (
         <div className="min-h-screen bg-background">
-            <Helmet>
-                <title>Video Gallery - NRSA</title>
-            </Helmet>
+            <SEO
+              title="Video Gallery"
+              description="Watch official NRSA videos — competition highlights, athlete profiles, training content, and rope skipping championships across Nigeria."
+              path="/videos"
+              breadcrumbs={[{ name: "Videos", url: "/videos" }]}
+            />
             {/* Hero Section */}
             <section className="bg-gradient-to-r from-primary to-primary/80 text-white py-20">
                 <div className="max-w-7xl mx-auto px-6 md:px-12">

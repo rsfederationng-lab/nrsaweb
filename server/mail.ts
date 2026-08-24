@@ -4,7 +4,11 @@ import {
   NewsletterWelcomeEmail,
   PartnershipAckEmail,
   RegistrationAckEmail,
-  GeneralAckEmail
+  GeneralAckEmail,
+  SchoolRegistrationConfirmationEmail,
+  AdminSchoolRegistrationNotificationEmail,
+  SchoolSelectedEmail,
+  SchoolNotSelectedEmail,
 } from './emails/templates.js';
 
 // Initialize Resend
@@ -122,4 +126,93 @@ export async function verifyEmailConnection() {
     hasPassword: true,
     passwordLength: apiKey.length
   };
+}
+
+// ─── SCHOOL REGISTRATION EMAILS ──────────────────────────────────────────────
+
+export async function sendSchoolRegistrationConfirmation(data: {
+  schoolName: string;
+  coordinatorName: string;
+  coordinatorEmail: string;
+  phase: string;
+  state: string;
+}) {
+  const html = SchoolRegistrationConfirmationEmail({
+    schoolName: data.schoolName,
+    coordinatorName: data.coordinatorName,
+    phase: data.phase,
+    state: data.state,
+  });
+
+  return await sendBrandedEmail({
+    to: data.coordinatorEmail,
+    subject: `Registration Confirmed - ${data.phase} Championship`,
+    html,
+  });
+}
+
+export async function sendAdminSchoolRegistrationNotification(data: {
+  schoolName: string;
+  coordinatorName: string;
+  email: string;
+  phone: string;
+  whatsappNumber: string;
+  phase: string;
+  state: string;
+  athleteCount: number;
+  category: string;
+  registrationId: number;
+}) {
+  const adminEmail = process.env.EMAIL_USER || "rsfederationng@gmail.com";
+  
+  const html = AdminSchoolRegistrationNotificationEmail(data);
+
+  return await sendBrandedEmail({
+    to: adminEmail,
+    subject: `New School Registration - ${data.schoolName}`,
+    html,
+    fromName: "NRSA Website",
+  });
+}
+
+export async function sendSchoolSelectionEmail(data: {
+  schoolName: string;
+  coordinatorName: string;
+  coordinatorEmail: string;
+  phase: string;
+  state: string;
+  venue: string;
+  competitionDate: string;
+  whatsappGroupLink?: string;
+  isSelected: boolean;
+}) {
+  let html: string;
+  let subject: string;
+
+  if (data.isSelected) {
+    html = SchoolSelectedEmail({
+      schoolName: data.schoolName,
+      coordinatorName: data.coordinatorName,
+      phase: data.phase,
+      state: data.state,
+      venue: data.venue,
+      competitionDate: data.competitionDate,
+      whatsappGroupLink: data.whatsappGroupLink,
+    });
+    subject = `Congratulations! Selected for ${data.phase} Championship`;
+  } else {
+    html = SchoolNotSelectedEmail({
+      schoolName: data.schoolName,
+      coordinatorName: data.coordinatorName,
+      phase: data.phase,
+      state: data.state,
+    });
+    subject = `${data.phase} Championship Update`;
+  }
+
+  return await sendBrandedEmail({
+    to: data.coordinatorEmail,
+    subject,
+    html,
+  });
 }

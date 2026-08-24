@@ -26,6 +26,7 @@ const heroImages = [photo2, photo3, photo4, photo5];
 
 
 
+
 export function Hero() {
   const [api, setApi] = useState<CarouselApi>();
   const heroMainBg = useSiteSetting("hero_main_bg");

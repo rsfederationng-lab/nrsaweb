@@ -1,4 +1,5 @@
-import { Helmet } from "react-helmet-async";
+﻿import React from "react";
+import { SEO } from "@/components/SEO";
 import { Hero } from "@/components/Hero";
 import { NewsEventsUnified } from "@/components/NewsEventsUnified";
 import { UserPathways } from "@/components/UserPathways";
@@ -9,7 +10,6 @@ import { Calendar, Users, Trophy, ChevronRight } from "lucide-react";
 import { ScrollFade } from "@/components/animations/ScrollFade";
 import { DynamicGallery } from "@/components/DynamicGallery";
 
-import { SEO } from "@/components/SEO";
 
 export default function HomeNew() {
   return (

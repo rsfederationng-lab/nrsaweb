@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Helmet } from "react-helmet-async";
+import { SEO } from "@/components/SEO";
 import { Loader2, Zap, UserCheck, MapPin } from "lucide-react";
 import { LeaderCard } from "@/components/LeaderCard";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -103,9 +103,12 @@ export default function Leaders() {
 
   return (
     <>
-      <Helmet>
-        <title>Leadership Team - NRSA</title>
-      </Helmet>
+      <SEO
+        title="Leadership Team"
+        description="Meet the officials and executive members of the Nigeria Rope Skipping Association — the dedicated team steering rope skipping development across Nigeria."
+        path="/leaders"
+        breadcrumbs={[{ name: "Leadership", url: "/leaders" }]}
+      />
       <section className="bg-gradient-to-r from-primary to-primary/80 text-white py-20">
         <div className="max-w-7xl mx-auto px-6 md:px-12">
           <h1 className="text-4xl md:text-6xl font-bold mb-6">Our Visionary Leaders</h1>

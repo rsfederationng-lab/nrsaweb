@@ -186,22 +186,6 @@ export function SchoolShowcase() {
                                 </Select>
                             </div>
                         )}
-
-                        {/* Registration Button */}
-                        {globalRegUrl && (
-                            <div className="mt-6">
-                                <a
-                                    href={globalRegUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                >
-                                    <Button size="lg" className="bg-emerald-600 hover:bg-emerald-700">
-                                        <ExternalLink className="mr-2 h-4 w-4" />
-                                        Register Your School
-                                    </Button>
-                                </a>
-                            </div>
-                        )}
                     </motion.div>
                 </div>
 

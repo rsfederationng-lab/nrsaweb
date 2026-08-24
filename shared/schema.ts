@@ -360,13 +360,12 @@ export type Ambassador = typeof ambassadors.$inferSelect;
 export const interschoolYears = pgTable("interschool_years", {
   id: serial("id").primaryKey(),
   year: text("year").notNull().unique(), // e.g., "2025"
-  logoUrl: text("logo_url").notNull(),
+  logoUrl: text("logo_url").notNull().default("/branding/nrsa_logo_sm.png"),
   isActive: boolean("is_active").notNull().default(false),
   themeColor: text("theme_color").default("#10b981"), // Default emerald
   videoUrl: text("video_url"),
   description: text("description"),
   aboutImageUrl: text("about_image_url"),
-  registrationUrl: text("registration_url"), // Registration link for this season
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -475,3 +474,108 @@ export const insertSubscriberSchema = createInsertSchema(subscribers, {
 
 export type InsertSubscriber = z.infer<typeof insertSubscriberSchema>;
 export type Subscriber = typeof subscribers.$inferSelect;
+
+// ─── CHAMPIONSHIP PHASES ────────────────────────────────────────────────────
+// Each season (interschool_year) can have multiple state-based phases,
+// e.g. Delta Week 1, Ondo Week 2, Kwara Week 3.
+export const championshipPhases = pgTable("championship_phases", {
+  id: serial("id").primaryKey(),
+  yearId: integer("year_id").references(() => interschoolYears.id).notNull(),
+  stateName: text("state_name").notNull(),          // e.g. "Delta"
+  venue: text("venue"),
+  registrationOpens: timestamp("registration_opens"),
+  registrationCloses: timestamp("registration_closes"),
+  competitionDate: timestamp("competition_date"),
+  maxSchools: integer("max_schools").notNull().default(9),
+  whatsappGroupLink: text("whatsapp_group_link"),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertChampionshipPhaseSchema = createInsertSchema(championshipPhases, {
+  registrationOpens: z.union([z.date(), z.string().transform((s) => new Date(s))]).nullable().optional(),
+  registrationCloses: z.union([z.date(), z.string().transform((s) => new Date(s))]).nullable().optional(),
+  competitionDate: z.union([z.date(), z.string().transform((s) => new Date(s))]).nullable().optional(),
+  maxSchools: z.coerce.number().int().positive().default(9),
+}).omit({ id: true, createdAt: true, yearId: true }).extend({
+  yearId: z.coerce.number(),
+});
+
+export type InsertChampionshipPhase = z.infer<typeof insertChampionshipPhaseSchema>;
+export type ChampionshipPhase = typeof championshipPhases.$inferSelect;
+
+// ─── SCHOOL REGISTRATIONS ────────────────────────────────────────────────────
+// Schools that register for a specific championship phase.
+export const REGISTRATION_STATUSES = [
+  "pending",
+  "under_review",
+  "selected",
+  "not_selected",
+  "waitlisted",
+  "withdrawn",
+] as const;
+
+export type RegistrationStatus = (typeof REGISTRATION_STATUSES)[number];
+
+export const schoolRegistrations = pgTable("school_registrations", {
+  id: serial("id").primaryKey(),
+  phaseId: integer("phase_id").references(() => championshipPhases.id).notNull(),
+  yearId: integer("year_id").references(() => interschoolYears.id).notNull(),
+
+  // School details
+  schoolName: text("school_name").notNull(),
+  state: text("state").notNull(),
+  schoolAddress: text("school_address").notNull(),
+
+  // Contact persons
+  principalName: text("principal_name").notNull(),
+  coordinatorName: text("coordinator_name").notNull(),
+  coordinatorPhone: text("coordinator_phone").notNull(),
+  whatsappNumber: text("whatsapp_number").notNull(),
+  email: text("email").notNull(),
+
+  // Participation details
+  athleteCount: integer("athlete_count").notNull(),
+  category: text("category").notNull(), // "junior" | "senior" | "both"
+  eventsCategories: text("events_categories"),   // JSON string of selected events
+  logoUrl: text("logo_url"),
+  consentGiven: boolean("consent_given").notNull().default(false),
+  additionalNotes: text("additional_notes"),
+
+  // Admin workflow
+  status: text("status").notNull().default("pending"),
+  adminNotes: text("admin_notes"),
+
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertSchoolRegistrationSchema = createInsertSchema(schoolRegistrations, {
+  email: z.string().email("Invalid email address"),
+  coordinatorPhone: z.string().min(7, "Phone number required"),
+  whatsappNumber: z.string().min(7, "WhatsApp number required"),
+  athleteCount: z.coerce.number().int().positive("Must be at least 1"),
+  category: z.enum(["junior", "senior", "both"]),
+  status: z.enum(REGISTRATION_STATUSES).default("pending"),
+  consentGiven: z.boolean(),
+}).omit({ id: true, createdAt: true, updatedAt: true, yearId: true, status: true, adminNotes: true }).extend({
+  phaseId: z.preprocess((val) => {
+    if (val === undefined || val === null || val === '' || val === 'NaN') return undefined;
+    const n = Number(val);
+    return isNaN(n) ? undefined : n;
+  }, z.number().positive().optional()),
+  yearId: z.preprocess((val) => {
+    if (val === undefined || val === null || val === '' || val === 'NaN') return undefined;
+    const n = Number(val);
+    return isNaN(n) ? undefined : n;
+  }, z.number().positive().optional()),
+});
+
+export const updateSchoolRegistrationSchema = z.object({
+  status: z.enum(REGISTRATION_STATUSES).optional(),
+  adminNotes: z.string().optional(),
+});
+
+export type InsertSchoolRegistration = z.infer<typeof insertSchoolRegistrationSchema>;
+export type UpdateSchoolRegistration = z.infer<typeof updateSchoolRegistrationSchema>;
+export type SchoolRegistration = typeof schoolRegistrations.$inferSelect;

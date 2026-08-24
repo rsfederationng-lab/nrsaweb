@@ -1,14 +1,17 @@
 import React from "react";
-import { Helmet } from "react-helmet-async";
+import { SEO } from "@/components/SEO";
 import { Card, CardContent } from "@/components/ui/card";
 import { AlertCircle } from "lucide-react";
 
 export default function NotFound() {
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-gray-50">
-      <Helmet>
-        <title>Page Not Found - NRSA</title>
-      </Helmet>
+      <SEO
+        title="Page Not Found"
+        description="The page you are looking for does not exist on the NRSA website."
+        path="/404"
+        pageType="WebPage"
+      />
       <Card className="w-full max-w-md mx-4">
         <CardContent className="pt-6">
           <div className="flex mb-4 gap-2">

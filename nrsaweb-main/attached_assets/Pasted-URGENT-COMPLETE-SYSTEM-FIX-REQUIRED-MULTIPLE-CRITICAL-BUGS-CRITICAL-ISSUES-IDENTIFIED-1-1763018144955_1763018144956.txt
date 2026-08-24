@@ -1,0 +1,47 @@
+URGENT: COMPLETE SYSTEM FIX REQUIRED - MULTIPLE CRITICAL BUGS
+
+🚨 CRITICAL ISSUES IDENTIFIED:
+
+1. **toSnakeCase FUNCTION BUG** - Converting Date objects to `{}` breaking ALL date operations
+2. **SCHEMA CONFLICTS** - Drizzle-Zod schemas conflicting with direct Supabase client usage
+3. **CLUBS CREATION BLOCKED** - 'manager_name' column error despite column existing in database
+4. **IMAGE DISPLAY PIPELINE BROKEN** - Images upload but don't display in frontend (except News)
+5. **EVENTS API FAILING** - Date handling issues causing 400 errors
+6. **EDIT FORMS EMPTY** - Not pre-populating with existing data
+7. **YOUTUBE THUMBNAILS BROKEN** - External media links not generating previews
+
+🎯 IMMEDIATE COMPREHENSIVE FIXES REQUIRED:
+
+**PHASE 1: FIX CORE INFRASTRUCTURE**
+1. **Fix toSnakeCase Function** - Preserve Date objects, don't convert to {}
+2. **Remove Drizzle-Zod Dependencies** - Replace with manual Zod schemas
+3. **Fix All Date Handling** - Events, News, and other date-based operations
+
+**PHASE 2: FIX DATA FLOW**
+4. **Fix Clubs Creation** - Manual schema validation for clubs
+5. **Fix All Edit Forms** - Ensure they fetch and display existing data
+6. **Fix Image Display Pipeline** - Debug why images save but don't show in frontend
+
+**PHASE 3: FIX USER EXPERIENCE**
+7. **Fix YouTube Thumbnails** - Generate proper previews for external media
+8. **Test ALL CRUD Operations** - Create, Read, Update, Delete for every entity
+9. **Verify Image Upload → Storage → Display** - End-to-end testing
+
+🔧 TECHNICAL APPROACH:
+- **SIMPLIFY** - Remove complex schema generators, use manual validation
+- **USE NEWS AS REFERENCE** - News works perfectly, replicate its patterns everywhere
+- **TEST EACH FIX** - Don't move to next issue until current one is verified working
+- **END-TO-END VERIFICATION** - Test complete user workflows, not just API calls
+
+🎯 PRIORITY ORDER:
+1. Fix toSnakeCase Date bug (BLOCKING)
+2. Fix Clubs creation with manual schema
+3. Fix image display pipeline
+4. Fix Events API date handling
+5. Fix all edit forms data pre-population
+6. Fix YouTube thumbnails
+7. Comprehensive testing of ALL functionality
+
+NO MORE PARTIAL FIXES. I need the ENTIRE system working end-to-end. Test every feature thoroughly before completing.
+
+The system was more stable with direct Supabase queries and manual validation. Revert to that approach and fix all remaining issues completely.

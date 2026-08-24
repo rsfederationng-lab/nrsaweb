@@ -4,8 +4,8 @@ import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Info, Play, ExternalLink } from "lucide-react";
 import { Link } from "wouter";
+import { Info, Play, ExternalLink } from "lucide-react";
 
 export function UnderstandingInterschool() {
     // Fetch site settings to get the video URL & global registration URL
@@ -69,27 +69,26 @@ export function UnderstandingInterschool() {
                             </CardContent>
                         </Card>
 
-                        {targetUrl && (
-                            <div className="pt-4">
-                                <a href={targetUrl} target="_blank" rel="noopener noreferrer">
-                                    <motion.div
-                                        whileHover={{ scale: 1.05 }}
-                                        whileTap={{ scale: 0.95 }}
+                        {/* Always show registration button linking to our form */}
+                        <div className="pt-4">
+                            <Link href="/interschool/register">
+                                <motion.div
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                >
+                                    <Button
+                                        size="lg"
+                                        className="relative bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-lg px-8 py-6 rounded-full shadow-lg shadow-emerald-500/20 overflow-hidden group"
                                     >
-                                        <Button
-                                            size="lg"
-                                            className="relative bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-lg px-8 py-6 rounded-full shadow-lg shadow-emerald-500/20 overflow-hidden group"
-                                        >
-                                            <span className="relative z-10 flex items-center gap-2">
-                                                Register Your School <ExternalLink className="w-5 h-5" />
-                                            </span>
-                                            {/* Pulse Animation Background */}
-                                            <span className="absolute inset-0 rounded-full bg-white/20 animate-ping opacity-0 group-hover:opacity-100 duration-1000"></span>
-                                        </Button>
-                                    </motion.div>
-                                </a>
-                            </div>
-                        )}
+                                        <span className="relative z-10 flex items-center gap-2">
+                                            Register Your School <ExternalLink className="w-5 h-5" />
+                                        </span>
+                                        {/* Pulse Animation Background */}
+                                        <span className="absolute inset-0 rounded-full bg-white/20 animate-ping opacity-0 group-hover:opacity-100 duration-1000"></span>
+                                    </Button>
+                                </motion.div>
+                            </Link>
+                        </div>
                     </div>
 
                     {/* Column 2: Video Embed */}

@@ -1,7 +1,7 @@
-import React from "react";
+﻿import React from "react";
 import { OptimizedImage } from "@/components/OptimizedImage";
 import { useEffect, useState } from "react";
-import { Helmet } from "react-helmet-async";
+import { SEO } from "@/components/SEO";
 import { Loader2, ArrowLeft, Calendar } from "lucide-react";
 import { useRoute, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -119,10 +119,17 @@ export default function NewsDetail({ id: propId }: { id?: string } = {}) {
 
   return (
     <>
-      <Helmet>
-        <title>{article.title} - NRSA News</title>
-        <meta name="description" content={article.excerpt} />
-      </Helmet>
+      <SEO
+        title={article.title}
+        description={article.excerpt || article.title}
+        image={article.imageUrl || undefined}
+        path={`/news/${article.id}`}
+        pageType="Article"
+        breadcrumbs={[
+          { name: "News", url: "/news" },
+          { name: article.title, url: `/news/${article.id}` },
+        ]}
+      />
 
       <div className="bg-gray-50 py-16 sm:py-24">
         <div className="max-w-4xl mx-auto px-6 lg:px-8">

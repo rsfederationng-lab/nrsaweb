@@ -13,9 +13,12 @@ import {
   type SchoolActivation, type InsertSchoolActivation,
   type InterschoolNews, type InsertInterschoolNews,
   type Subscriber, type InsertSubscriber,
+  type ChampionshipPhase, type InsertChampionshipPhase,
+  type SchoolRegistration, type InsertSchoolRegistration, type UpdateSchoolRegistration,
   users, admins, heroSlides, news, events, players, clubs, leaders,
   media, affiliations, contacts, siteSettings, ambassadors,
-  interschoolYears, schoolStandings, schoolActivations, interschoolNews, subscribers
+  interschoolYears, schoolStandings, schoolActivations, interschoolNews, subscribers,
+  championshipPhases, schoolRegistrations
 } from "@shared/schema";
 
 import { supabase } from "./lib/supabase.js";
@@ -905,6 +908,94 @@ export const storage = {
   deleteSubscriber: async (id: number) => {
     if (!supabase) throw new Error('Database not available');
     const { error } = await supabase.from('subscribers').delete().eq('id', id);
+    if (error) throw error;
+    return true;
+  },
+
+  // Championship Phases
+  getChampionshipPhasesByYear: async (yearId: number) => {
+    if (!supabase) return [];
+    const { data, error } = await supabase.from('championship_phases')
+      .select('*')
+      .eq('year_id', yearId)
+      .order('competition_date', { ascending: true });
+    if (error) throw error;
+    return toCamelCase(data) || [];
+  },
+  getChampionshipPhase: async (id: number) => {
+    if (!supabase) return null;
+    const { data, error } = await supabase.from('championship_phases').select('*').eq('id', id).single();
+    if (error) return null;
+    return toCamelCase(data);
+  },
+  createChampionshipPhase: async (phase: InsertChampionshipPhase) => {
+    if (!supabase) throw new Error('Database not available');
+    const { data, error } = await supabase.from('championship_phases').insert(toSnakeCase(phase)).select().single();
+    if (error) throw error;
+    return toCamelCase(data);
+  },
+  updateChampionshipPhase: async (id: number, update: Partial<InsertChampionshipPhase>) => {
+    if (!supabase) throw new Error('Database not available');
+    const { data, error } = await supabase.from('championship_phases').update(toSnakeCase(update)).eq('id', id).select().single();
+    if (error) throw error;
+    return toCamelCase(data);
+  },
+  deleteChampionshipPhase: async (id: number) => {
+    if (!supabase) throw new Error('Database not available');
+    const { error } = await supabase.from('championship_phases').delete().eq('id', id);
+    if (error) throw error;
+    return true;
+  },
+
+  // School Registrations
+  getAllSchoolRegistrations: async () => {
+    if (!supabase) return [];
+    const { data, error } = await supabase.from('school_registrations')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return toCamelCase(data) || [];
+  },
+  getSchoolRegistrationsByPhase: async (phaseId: number) => {
+    if (!supabase) return [];
+    const { data, error } = await supabase.from('school_registrations')
+      .select('*')
+      .eq('phase_id', phaseId)
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return toCamelCase(data) || [];
+  },
+  getSchoolRegistrationsByYear: async (yearId: number) => {
+    if (!supabase) return [];
+    const { data, error } = await supabase.from('school_registrations')
+      .select('*')
+      .eq('year_id', yearId)
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return toCamelCase(data) || [];
+  },
+  getSchoolRegistration: async (id: number) => {
+    if (!supabase) return null;
+    const { data, error } = await supabase.from('school_registrations').select('*').eq('id', id).single();
+    if (error) return null;
+    return toCamelCase(data);
+  },
+  createSchoolRegistration: async (registration: InsertSchoolRegistration) => {
+    if (!supabase) throw new Error('Database not available');
+    const { data, error } = await supabase.from('school_registrations').insert(toSnakeCase(registration)).select().single();
+    if (error) throw error;
+    return toCamelCase(data);
+  },
+  updateSchoolRegistration: async (id: number, update: UpdateSchoolRegistration) => {
+    if (!supabase) throw new Error('Database not available');
+    const updateData = toSnakeCase(update);
+    const { data, error } = await supabase.from('school_registrations').update(updateData).eq('id', id).select().single();
+    if (error) throw error;
+    return toCamelCase(data);
+  },
+  deleteSchoolRegistration: async (id: number) => {
+    if (!supabase) throw new Error('Database not available');
+    const { error } = await supabase.from('school_registrations').delete().eq('id', id);
     if (error) throw error;
     return true;
   },
