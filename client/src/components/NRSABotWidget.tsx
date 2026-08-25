@@ -23,7 +23,11 @@ export function NRSABotWidget() {
 
     const mutation = useMutation({
         mutationFn: async (message: string) => {
-            const res = await apiRequest('POST', '/api/nrsa-bot', { message });
+            const res = await apiRequest('POST', '/api/nrsa-bot', {
+                message,
+                // Send full conversation history so the AI remembers context
+                history: messages.slice(0, -1), // exclude the user message we just added
+            });
             return res.json();
         },
         onSuccess: (data) => {
@@ -125,7 +129,24 @@ export function NRSABotWidget() {
                                                 ? "bg-green-600 text-white rounded-br-none"
                                                 : "bg-white border border-gray-200 text-gray-800 rounded-bl-none shadow-sm"
                                                 }`}>
-                                                {msg.content}
+                                                {msg.role === 'assistant'
+                                                  ? msg.content.split(/(https?:\/\/[^\s]+)/g).map((part, i) =>
+                                                      /^https?:\/\//.test(part) ? (
+                                                        <a
+                                                          key={i}
+                                                          href={part.replace(/[.,!?]$/, '')}
+                                                          target="_blank"
+                                                          rel="noopener noreferrer"
+                                                          className="text-emerald-600 underline break-all hover:text-emerald-700"
+                                                        >
+                                                          {part.replace(/[.,!?]$/, '')}
+                                                        </a>
+                                                      ) : (
+                                                        <span key={i}>{part}</span>
+                                                      )
+                                                    )
+                                                  : msg.content
+                                                }
                                             </div>
                                         </div>
                                     ))}
