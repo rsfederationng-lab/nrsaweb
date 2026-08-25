@@ -58,6 +58,14 @@ export default function InterschoolRegister() {
     queryKey: ["/api/interschool-years"],
   });
 
+  // Fetch site settings for the disciplines YouTube link
+  const { data: siteSettings = [] } = useQuery<any[]>({
+    queryKey: ["/api/site-settings"],
+  });
+  const disciplinesYoutubeUrl = siteSettings.find(
+    (s: any) => s.key === "interschool_disciplines_youtube_url"
+  )?.value || "";
+
   const activeSeason = seasons.find((s) => s.isActive) || seasons[0];
 
   const {
@@ -419,28 +427,43 @@ export default function InterschoolRegister() {
                     {
                       key: "knowsYCourt",
                       question: "Does your school understand the Y-Court competition concept?",
+                      extra: null,
                     },
                     {
                       key: "knows9Disciplines",
                       question: "Are your athletes familiar with the 9 competition disciplines (SRSS, SRSE, SROF, SRCC, SRDU, SRSR, DDSR, DSS, LMS)?",
+                      extra: null,
                     },
                     {
                       key: "hasTrainedAthletes",
-                      question: "Does your school understand that athletes are required to participate in all 9 disciplines on competition day?",
+                      question: "Do you know that all 9 disciplines are accessible and can be learned on YouTube?",
+                      extra: disciplinesYoutubeUrl ? (
+                        <a
+                          href={disciplinesYoutubeUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-xs text-emerald-600 underline mt-1"
+                        >
+                          ▶ Watch all 9 discipline videos here
+                        </a>
+                      ) : null,
                     },
                     {
                       key: "hasJudge",
                       question: "Does your school have a teacher or coach who can serve as an on-site judge?",
+                      extra: null,
                     },
                     {
                       key: "canTravelToVenue",
                       question: "Can your school confirm that athletes will physically be present at the venue on competition day?",
+                      extra: null,
                     },
                     {
                       key: "attendedBefore",
                       question: "Has your school participated in any previous NRSA competition or event?",
+                      extra: null,
                     },
-                  ].map(({ key, question }) => {
+                  ].map(({ key, question, extra }) => {
                     const current = (() => {
                       try {
                         const val = watchedValues.eventsCategories;
@@ -462,6 +485,7 @@ export default function InterschoolRegister() {
                     return (
                       <div key={key} className="border rounded-lg p-4 bg-white space-y-3">
                         <p className="text-sm font-medium text-gray-800">{question}</p>
+                        {extra && <div>{extra}</div>}
                         <div className="flex gap-3">
                           <button
                             type="button"

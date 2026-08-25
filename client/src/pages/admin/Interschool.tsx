@@ -97,12 +97,15 @@ export default function AdminInterschool() {
     });
 
     const [videoUrl, setVideoUrl] = useState("");
+    const [disciplinesYoutubeUrl, setDisciplinesYoutubeUrl] = useState("");
 
     // Update local state when settings load
     useEffect(() => {
         if (siteSettings) {
             const videoSetting = siteSettings.find((s: any) => s.key === "interschool_video_url");
             if (videoSetting) setVideoUrl(videoSetting.value);
+            const disciplinesSetting = siteSettings.find((s: any) => s.key === "interschool_disciplines_youtube_url");
+            if (disciplinesSetting) setDisciplinesYoutubeUrl(disciplinesSetting.value);
         }
     }, [siteSettings]);
 
@@ -435,6 +438,26 @@ export default function AdminInterschool() {
                         </div>
                         <Button
                             onClick={() => updateSettingMutation.mutate({ key: "interschool_video_url", value: videoUrl })}
+                            disabled={updateSettingMutation.isPending}
+                        >
+                            {updateSettingMutation.isPending ? "Saving..." : "Save"}
+                        </Button>
+                    </div>
+
+                    <div className="flex gap-4 items-end">
+                        <div className="flex-1 space-y-2">
+                            <Label>9 Disciplines YouTube Course Link</Label>
+                            <p className="text-xs text-muted-foreground">
+                                Paste the YouTube playlist or course link here. It will appear on the school registration form so schools can watch all 9 discipline videos before registering.
+                            </p>
+                            <Input
+                                placeholder="https://youtube.com/playlist?list=..."
+                                value={disciplinesYoutubeUrl}
+                                onChange={(e) => setDisciplinesYoutubeUrl(e.target.value)}
+                            />
+                        </div>
+                        <Button
+                            onClick={() => updateSettingMutation.mutate({ key: "interschool_disciplines_youtube_url", value: disciplinesYoutubeUrl })}
                             disabled={updateSettingMutation.isPending}
                         >
                             {updateSettingMutation.isPending ? "Saving..." : "Save"}
