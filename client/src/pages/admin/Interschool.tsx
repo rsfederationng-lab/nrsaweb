@@ -28,7 +28,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, Trophy, FileText } from "lucide-react";
+import { Plus, Trash2, Trophy, FileText, Star, CheckCircle2 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { queryClient } from "@/lib/queryClient";
 import { ImageUpload } from "@/components/admin/ImageUpload";
 import { Link } from "wouter";
@@ -49,10 +50,13 @@ interface InterschoolYear {
 interface SchoolStanding {
     id: number;
     yearId: number;
+    phaseId?: number | null;
     schoolName: string;
     state: string;
     points: number;
-    logoUrl?: string; // Optional
+    rank?: number;
+    qualifiedForNational?: boolean;
+    logoUrl?: string;
 }
 
 interface InterschoolNews {
@@ -191,6 +195,18 @@ export default function AdminInterschool() {
     }, [years, selectedYearId]);
 
 
+    // --- PHASES (for standings grouping) ---
+    const { data: phases = [] } = useQuery<any[]>({
+        queryKey: ["/api/championship-phases", { yearId: selectedYearId }],
+        enabled: !!selectedYearId,
+        queryFn: async () => {
+            if (!selectedYearId) return [];
+            const res = await apiRequest("GET", `/api/championship-phases?yearId=${selectedYearId}`);
+            if (!res.ok) return [];
+            return res.json();
+        },
+    });
+
     // --- STANDINGS ---
     const { data: standings = [], isError: isStandingsError } = useQuery<SchoolStanding[]>({
         queryKey: ["/api/school-standings", { yearId: selectedYearId }],
@@ -202,26 +218,33 @@ export default function AdminInterschool() {
     const createStandingMutation = useMutation({
         mutationFn: async (data: Partial<SchoolStanding>) => {
             const res = await apiRequest("POST", "/api/school-standings", { ...data, yearId: selectedYearId! });
+            if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error || `${res.status}`); }
             return res.json();
         },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["/api/school-standings"] });
-            toast({ title: "Success", description: "School added to standings." });
-            setNewStanding({ schoolName: "", state: "", points: 0 }); // Reset form
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ["/api/school-standings"] }),
+        onError: (e: any) => toast({ title: "Error saving standing", description: e.message, variant: "destructive" }),
+    });
+
+    const updateStandingMutation = useMutation({
+        mutationFn: async ({ id, ...data }: Partial<SchoolStanding> & { id: number }) => {
+            const res = await apiRequest("PATCH", `/api/school-standings/${id}`, data);
+            if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error || `${res.status}`); }
+            return res.json();
         },
-        onError: (error: Error) => {
-            toast({ title: "Error", description: "Failed to add standing.", variant: "destructive" });
-        }
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ["/api/school-standings"] }),
+        onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
     });
 
     const deleteStandingMutation = useMutation({
         mutationFn: async (id: number) => {
-            await apiRequest("DELETE", `/api/school-standings/${id}`);
+            const res = await apiRequest("DELETE", `/api/school-standings/${id}`);
+            if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error || `${res.status}`); }
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["/api/school-standings"] });
-            toast({ title: "Success", description: "School removed." });
-        }
+            toast({ title: "School removed." });
+        },
+        onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
     });
 
     // --- INTERSCHOOL NEWS ---
@@ -233,26 +256,27 @@ export default function AdminInterschool() {
     const createNewsMutation = useMutation({
         mutationFn: async (data: { title: string; content: string; imageUrl?: string }) => {
             const res = await apiRequest("POST", "/api/interschool-news", { ...data, yearId: selectedYearId! });
+            if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error || `${res.status}`); }
             return res.json();
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["/api/interschool-news"] });
-            toast({ title: "Success", description: "News item created." });
+            toast({ title: "News added successfully." });
             setNewNews({ title: "", content: "", imageUrl: "" });
         },
-        onError: (error: Error) => {
-            toast({ title: "Error", description: error.message, variant: "destructive" });
-        }
+        onError: (e: any) => toast({ title: "Error saving news", description: e.message, variant: "destructive" }),
     });
 
     const deleteNewsMutation = useMutation({
         mutationFn: async (id: number) => {
-            await apiRequest("DELETE", `/api/interschool-news/${id}`);
+            const res = await apiRequest("DELETE", `/api/interschool-news/${id}`);
+            if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error || `${res.status}`); }
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["/api/interschool-news"] });
-            toast({ title: "Success", description: "News item deleted." });
-        }
+            toast({ title: "News item deleted." });
+        },
+        onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
     });
 
 
@@ -261,17 +285,19 @@ export default function AdminInterschool() {
 
     // Form States
     const [newYear, setNewYear] = useState<Partial<InterschoolYear>>({
-        year: "",
-        logoUrl: "/branding/nrsa_logo_sm.png",
-        isActive: false,
-        themeColor: "#10b981",
-        videoUrl: "",
-        description: "",
-        aboutImageUrl: ""
-    }); // Default proper path?
-    const [newStanding, setNewStanding] = useState({ schoolName: "", state: "", points: 0 });
+        year: "", logoUrl: "/branding/nrsa_logo_sm.png", isActive: false,
+        themeColor: "#10b981", videoUrl: "", description: "", aboutImageUrl: ""
+    });
     const [newNews, setNewNews] = useState({ title: "", content: "", imageUrl: "" });
     const [selectedNewsItem, setSelectedNewsItem] = useState<InterschoolNews | null>(null);
+
+    // Phase-based standings form state
+    const [standingPhaseId, setStandingPhaseId] = useState<number | null>(null);
+    const [phaseResults, setPhaseResults] = useState({
+        first: "", second: "", third: "",
+        firstPoints: 0, secondPoints: 0, thirdPoints: 0,
+        qualifiedFirst: true,
+    });
 
 
     return (
@@ -467,98 +493,207 @@ export default function AdminInterschool() {
             </Card>
 
             {selectedYearId ? (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="space-y-8">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
-                    <Card>
+                    <Card className="lg:col-span-2">
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                                 <Trophy className="h-5 w-5 text-yellow-500" />
-                                Rankings & Standings {selectedYear && <span className="text-muted-foreground font-normal text-base">- {selectedYear.year}</span>}
+                                Rankings & Standings
+                                {selectedYear && <span className="text-muted-foreground font-normal text-base">— {selectedYear.year}</span>}
                             </CardTitle>
-                            <CardDescription>Manage points for participating schools.</CardDescription>
+                            <CardDescription>
+                                Record top 3 results per zone after each competition week.
+                            </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">
                             {isStandingsError && (
-                                <div className="bg-destructive/15 text-destructive p-3 rounded-md text-sm mb-4">
-                                    Failed to load standings. Please try refreshing the page.
+                                <div className="bg-destructive/15 text-destructive p-3 rounded-md text-sm">
+                                    Failed to load standings. Please refresh.
                                 </div>
                             )}
-                            {/* Add Form */}
-                            <div className="grid grid-cols-12 gap-2 items-end border-b pb-4">
-                                <div className="col-span-4 space-y-1">
-                                    <label className="text-xs">School Name</label>
-                                    <Input
-                                        placeholder="School Name"
-                                        value={newStanding.schoolName}
-                                        onChange={(e) => setNewStanding({ ...newStanding, schoolName: e.target.value })}
-                                    />
-                                </div>
-                                <div className="col-span-4 space-y-1">
-                                    <label className="text-xs">State</label>
-                                    <Input
-                                        placeholder="State"
-                                        value={newStanding.state}
-                                        onChange={(e) => setNewStanding({ ...newStanding, state: e.target.value })}
-                                    />
-                                </div>
-                                <div className="col-span-2 space-y-1">
-                                    <label className="text-xs">Points</label>
-                                    <Input
-                                        type="number"
-                                        value={newStanding.points}
-                                        onChange={(e) => setNewStanding({ ...newStanding, points: parseInt(e.target.value) || 0 })}
-                                    />
-                                </div>
-                                <div className="col-span-2">
-                                    <Button
-                                        className="w-full"
-                                        onClick={() => createStandingMutation.mutate(newStanding)}
-                                        disabled={!newStanding.schoolName || createStandingMutation.isPending}
+
+                            {/* ── Zone selector + entry form ── */}
+                            <div className="rounded-xl border bg-muted/20 p-4 space-y-4">
+                                <div className="space-y-1">
+                                    <label className="text-sm font-medium">Select Zone / Phase</label>
+                                    <Select
+                                        value={standingPhaseId?.toString() ?? ""}
+                                        onValueChange={(v) => setStandingPhaseId(parseInt(v))}
                                     >
-                                        <Plus className="h-4 w-4" />
-                                    </Button>
+                                        <SelectTrigger className="w-full bg-white">
+                                            <SelectValue placeholder="Choose a phase to record results for" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {phases.map((p: any) => (
+                                                <SelectItem key={p.id} value={p.id.toString()}>
+                                                    {p.stateName} Phase
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
                                 </div>
+
+                                {standingPhaseId && (() => {
+                                    const phase = phases.find((p: any) => p.id === standingPhaseId);
+                                    const existing = standings.filter((s) => s.phaseId === standingPhaseId);
+                                    if (existing.length > 0) return null; // already recorded
+                                    return (
+                                        <div className="space-y-3">
+                                            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
+                                                Enter results for {phase?.stateName} Phase
+                                            </p>
+                                            {[
+                                                { label: "🥇 1st Place", key: "first" as const, pts: "firstPoints" as const, medal: "text-yellow-600" },
+                                                { label: "🥈 2nd Place", key: "second" as const, pts: "secondPoints" as const, medal: "text-gray-500" },
+                                                { label: "🥉 3rd Place", key: "third" as const, pts: "thirdPoints" as const, medal: "text-orange-600" },
+                                            ].map(({ label, key, pts }) => (
+                                                <div key={key} className="grid grid-cols-12 gap-2 items-center">
+                                                    <span className="col-span-2 text-sm font-semibold">{label}</span>
+                                                    <Input
+                                                        className="col-span-7"
+                                                        placeholder="School name"
+                                                        value={phaseResults[key]}
+                                                        onChange={(e) => setPhaseResults({ ...phaseResults, [key]: e.target.value })}
+                                                    />
+                                                    <Input
+                                                        className="col-span-3"
+                                                        type="number"
+                                                        placeholder="Pts"
+                                                        value={phaseResults[pts]}
+                                                        onChange={(e) => setPhaseResults({ ...phaseResults, [pts]: parseInt(e.target.value) || 0 })}
+                                                    />
+                                                </div>
+                                            ))}
+                                            <div className="flex items-center gap-2 pt-1">
+                                                <Checkbox
+                                                    id="qualifyFirst"
+                                                    checked={phaseResults.qualifiedFirst}
+                                                    onCheckedChange={(v) => setPhaseResults({ ...phaseResults, qualifiedFirst: !!v })}
+                                                />
+                                                <label htmlFor="qualifyFirst" className="text-sm cursor-pointer">
+                                                    Mark 1st place as <span className="font-semibold text-emerald-700">Qualified for National Final</span>
+                                                </label>
+                                            </div>
+                                            <Button
+                                                className="w-full"
+                                                disabled={!phaseResults.first || createStandingMutation.isPending}
+                                                onClick={() => {
+                                                    const entries = [
+                                                        { schoolName: phaseResults.first, rank: 1, points: phaseResults.firstPoints, qualifiedForNational: phaseResults.qualifiedFirst },
+                                                        phaseResults.second && { schoolName: phaseResults.second, rank: 2, points: phaseResults.secondPoints, qualifiedForNational: false },
+                                                        phaseResults.third && { schoolName: phaseResults.third, rank: 3, points: phaseResults.thirdPoints, qualifiedForNational: false },
+                                                    ].filter(Boolean) as any[];
+                                                    const phaseName = phases.find((p: any) => p.id === standingPhaseId)?.stateName || "";
+                                                    Promise.all(entries.map(async (e) => {
+                                                        const res = await apiRequest("POST", "/api/school-standings", {
+                                                            ...e,
+                                                            state: phaseName,
+                                                            phaseId: standingPhaseId,
+                                                            yearId: selectedYearId,
+                                                        });
+                                                        if (!res.ok) {
+                                                            const err = await res.json().catch(() => ({}));
+                                                            throw new Error(err.error || `${res.status}`);
+                                                        }
+                                                        return res.json();
+                                                    })).then(() => {
+                                                        queryClient.invalidateQueries({ queryKey: ["/api/school-standings"] });
+                                                        toast({ title: "Results saved", description: `${phaseName} phase standings recorded.` });
+                                                        setPhaseResults({ first: "", second: "", third: "", firstPoints: 0, secondPoints: 0, thirdPoints: 0, qualifiedFirst: true });
+                                                        setStandingPhaseId(null);
+                                                    }).catch(() => toast({ title: "Error", description: "Failed to save results.", variant: "destructive" }));
+                                                }}
+                                            >
+                                                <Plus className="h-4 w-4 mr-2" /> Save Phase Results
+                                            </Button>
+                                        </div>
+                                    );
+                                })()}
                             </div>
 
-                            {/* List */}
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Rank</TableHead>
-                                        <TableHead>School</TableHead>
-                                        <TableHead>Pts</TableHead>
-                                        <TableHead></TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {standings.map((s, i) => (
-                                        <TableRow key={s.id}>
-                                            <TableCell className="font-bold">{i + 1}</TableCell>
-                                            <TableCell>
-                                                <div className="font-medium">{s.schoolName}</div>
-                                                <div className="text-xs text-muted-foreground">{s.state}</div>
-                                            </TableCell>
-                                            <TableCell>{s.points}</TableCell>
-                                            <TableCell>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    onClick={() => deleteStandingMutation.mutate(s.id)}
-                                                >
-                                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                                </Button>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                    {standings.length === 0 && (
-                                        <TableRow>
-                                            <TableCell colSpan={4} className="text-center text-muted-foreground py-4">
-                                                No standings yet.
-                                            </TableCell>
-                                        </TableRow>
-                                    )}
-                                </TableBody>
-                            </Table>
+                            {/* ── Zone Champions Summary ── */}
+                            {phases.length > 0 && (
+                                <div className="space-y-3">
+                                    <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Zone Results</p>
+                                    {phases.map((phase: any) => {
+                                        const phaseStandings = standings
+                                            .filter((s) => s.phaseId === phase.id || s.state === phase.stateName)
+                                            .sort((a, b) => (a.rank ?? a.points) - (b.rank ?? b.points));
+
+                                        return (
+                                            <div key={phase.id} className="rounded-xl border bg-white overflow-hidden">
+                                                <div className="flex items-center justify-between px-4 py-2 bg-emerald-50 border-b">
+                                                    <span className="font-bold text-emerald-800 text-sm">{phase.stateName} Phase</span>
+                                                    {phaseStandings.some(s => s.qualifiedForNational) && (
+                                                        <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
+                                                            <CheckCircle2 className="h-3 w-3" /> Qualifier recorded
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                {phaseStandings.length === 0 ? (
+                                                    <p className="text-xs text-muted-foreground px-4 py-3">
+                                                        No standings recorded yet for this phase. Add results after the competition.
+                                                    </p>
+                                                ) : (
+                                                    <div className="divide-y">
+                                                        {phaseStandings.map((s) => (
+                                                            <div key={s.id} className="flex items-center gap-3 px-4 py-2">
+                                                                <span className="text-lg">
+                                                                    {s.rank === 1 ? "🥇" : s.rank === 2 ? "🥈" : "🥉"}
+                                                                </span>
+                                                                <div className="flex-1">
+                                                                    <span className="font-medium text-sm">{s.schoolName}</span>
+                                                                    {s.qualifiedForNational && (
+                                                                        <span className="ml-2 text-[10px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded-full">
+                                                                            ✓ National Qualifier
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                                {s.points > 0 && (
+                                                                    <span className="text-xs text-muted-foreground font-mono">{s.points} pts</span>
+                                                                )}
+                                                                <Button
+                                                                    variant="ghost" size="icon"
+                                                                    onClick={() => deleteStandingMutation.mutate(s.id)}
+                                                                >
+                                                                    <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                                                                </Button>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+
+                            {/* ── National Qualifiers Summary ── */}
+                            {standings.some(s => s.qualifiedForNational) && (
+                                <div className="rounded-xl border-2 border-emerald-400 bg-emerald-50 p-4">
+                                    <p className="text-sm font-bold text-emerald-800 mb-3 flex items-center gap-2">
+                                        <Star className="h-4 w-4 text-yellow-500" />
+                                        National Final Qualifiers
+                                    </p>
+                                    <div className="space-y-1">
+                                        {standings.filter(s => s.qualifiedForNational).map(s => (
+                                            <div key={s.id} className="flex items-center gap-2 text-sm">
+                                                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                                                <span className="font-semibold">{s.schoolName}</span>
+                                                <span className="text-muted-foreground">— {s.state} Zone</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {phases.length === 0 && (
+                                <p className="text-sm text-muted-foreground text-center py-4">
+                                    Create championship phases first to record zone standings.
+                                </p>
+                            )}
                         </CardContent>
                     </Card>
 
@@ -681,6 +816,7 @@ export default function AdminInterschool() {
                         </DialogContent>
                     </Dialog>
 
+                </div>
                 </div>
             ) : (
                 <div className="text-center py-20 bg-muted/20 rounded-xl">

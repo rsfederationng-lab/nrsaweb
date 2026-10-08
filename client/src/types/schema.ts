@@ -10,6 +10,39 @@ export interface HeroSlide {
   createdAt: Date;
 }
 
+export interface FeaturedBanner {
+  id: number;
+  title: string;
+  subtitle: string;
+  badgeText: string;
+  primaryButtonText: string;
+  primaryButtonLink: string;
+  secondaryButtonText?: string | null;
+  secondaryButtonLink?: string | null;
+  backgroundStyle: "red" | "green" | "custom";
+  imageUrl?: string | null;
+  isActive: boolean;
+  order: number;
+  startDate?: Date | null;
+  endDate?: Date | null;
+  displayFrequency: "every_visit" | "once" | "twice" | "weekly";
+  isEmergency: boolean;
+  showCountdown: boolean;
+  createdAt: Date;
+}
+
+export interface StoreProduct {
+  id: number;
+  name: string;
+  price: number;
+  imageUrl?: string | null;
+  description?: string | null;
+  isPreorder: boolean;
+  isActive: boolean;
+  order: number;
+  createdAt: Date;
+}
+
 export interface News {
   id: number;
   title: string;

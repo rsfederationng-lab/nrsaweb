@@ -9,11 +9,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar, Users, Trophy, ChevronRight } from "lucide-react";
 import { ScrollFade } from "@/components/animations/ScrollFade";
 import { DynamicGallery } from "@/components/DynamicGallery";
+import { FeaturedEventBanner } from "@/components/FeaturedEventBanner";
+import { InterschoolCountdown } from "@/components/InterschoolCountdown";
 
 
 export default function HomeNew() {
   return (
     <div className="min-h-screen bg-white">
+      <FeaturedEventBanner />
+
       <SEO
         title="Nigeria Rope Skipping Association | Official Governing Body"
         description="The official body for rope skipping in Nigeria. Promoting grassroots sports, Y-Court competitions, and the National Alpha League."
@@ -22,6 +26,9 @@ export default function HomeNew() {
 
       {/* Hero Section */}
       <Hero />
+
+      {/* Interschool Countdown Bar */}
+      <InterschoolCountdown />
 
       {/* News & Events Section */}
       <ScrollFade delay={200}>

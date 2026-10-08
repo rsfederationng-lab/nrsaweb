@@ -30,23 +30,37 @@ export function PhaseRegistrationManager({ selectedYearId }: Props) {
   const [selectedPhaseId, setSelectedPhaseId] = useState<number | null>(null);
 
   // ── queries ────────────────────────────────────────────────────
-  const { data: phases = [] } = useQuery<any[]>({
+  const { data: phases = [], isLoading: phasesLoading, isError: phasesError, error: phasesQueryError } = useQuery<any[]>({
     queryKey: ["/api/championship-phases", { yearId: selectedYearId }],
     enabled: !!selectedYearId,
     queryFn: async () => {
       const res = await apiRequest("GET", `/api/championship-phases?yearId=${selectedYearId}`);
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({}));
+        throw new Error(error.error || `Unable to load phases (${res.status})`);
+      }
       return res.json();
     },
   });
 
-  const { data: registrations = [] } = useQuery<any[]>({
-    queryKey: ["/api/school-registrations", { phaseId: selectedPhaseId }],
-    enabled: !!selectedPhaseId,
+  const { data: registrations = [], isLoading: registrationsLoading, isError: registrationsError, error: registrationsQueryError } = useQuery<any[]>({
+    queryKey: ["/api/school-registrations", { yearId: selectedYearId }],
+    enabled: !!selectedYearId,
     queryFn: async () => {
-      const res = await apiRequest("GET", `/api/school-registrations?phaseId=${selectedPhaseId}`);
+      const res = await apiRequest("GET", `/api/school-registrations?yearId=${selectedYearId}`);
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({}));
+        throw new Error(error.error || `Unable to load registrations (${res.status})`);
+      }
       return res.json();
     },
   });
+
+  const phaseList = Array.isArray(phases) ? phases : [];
+  const registrationList = Array.isArray(registrations) ? registrations : [];
+  const visibleRegistrations = selectedPhaseId
+    ? registrationList.filter((registration) => registration.phaseId === selectedPhaseId)
+    : registrationList;
 
   // ── new phase form state ───────────────────────────────────────
   const [newPhase, setNewPhase] = useState({
@@ -174,13 +188,24 @@ export function PhaseRegistrationManager({ selectedYearId }: Props) {
         <TabsContent value="phases">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Championship Phases</CardTitle>
+              <div>
+                <CardTitle>Championship Phases</CardTitle>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  The competition dates below control the public homepage countdown. Update a date here whenever the schedule changes.
+                </p>
+              </div>
               <Button size="sm" onClick={() => setIsCreatePhaseOpen(true)}>
                 <Plus className="mr-2 h-4 w-4" /> Add Phase
               </Button>
             </CardHeader>
             <CardContent>
-              {phases.length === 0 ? (
+              {phasesLoading ? (
+                <div className="py-8 text-center text-muted-foreground">Loading championship phases...</div>
+              ) : phasesError ? (
+                <div className="py-8 text-center text-destructive">
+                  {(phasesQueryError as Error)?.message || "Unable to load championship phases. Please sign in again if your admin session expired."}
+                </div>
+              ) : phaseList.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   No phases yet. Add your first championship phase.
                 </div>
@@ -197,8 +222,8 @@ export function PhaseRegistrationManager({ selectedYearId }: Props) {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {phases.map((phase) => {
-                      const phaseRegs     = registrations.filter((r) => r.phaseId === phase.id);
+                    {phaseList.map((phase) => {
+                      const phaseRegs     = registrationList.filter((r) => r.phaseId === phase.id);
                       const selectedCount = phaseRegs.filter((r) => r.status === "selected").length;
                       return (
                         <TableRow key={phase.id}>
@@ -263,7 +288,7 @@ export function PhaseRegistrationManager({ selectedYearId }: Props) {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Phases</SelectItem>
-                    {phases.map((p) => (
+                    {phaseList.map((p) => (
                       <SelectItem key={p.id} value={p.id.toString()}>{p.stateName}</SelectItem>
                     ))}
                   </SelectContent>
@@ -278,9 +303,15 @@ export function PhaseRegistrationManager({ selectedYearId }: Props) {
               </div>
             </CardHeader>
             <CardContent>
-              {registrations.length === 0 ? (
+              {registrationsLoading ? (
+                <div className="py-8 text-center text-muted-foreground">Loading school registrations...</div>
+              ) : registrationsError ? (
+                <div className="mb-4 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+                  {(registrationsQueryError as Error)?.message || "Unable to load school registrations. Please sign in again if your admin session expired."}
+                </div>
+              ) : visibleRegistrations.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
-                  {selectedPhaseId ? "No registrations yet for this phase." : "Select a phase to view registrations."}
+                  {selectedPhaseId ? "No registrations yet for this phase." : "No school registrations yet."}
                 </div>
               ) : (
                 <Table>
@@ -296,7 +327,7 @@ export function PhaseRegistrationManager({ selectedYearId }: Props) {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {registrations.map((reg) => (
+                    {visibleRegistrations.map((reg) => (
                       <TableRow key={reg.id}>
                         <TableCell className="font-medium">{reg.schoolName}</TableCell>
                         <TableCell>{reg.state}</TableCell>

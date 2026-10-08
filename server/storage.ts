@@ -17,6 +17,8 @@ import {
   type SchoolRegistration, type InsertSchoolRegistration, type UpdateSchoolRegistration,
   users, admins, heroSlides, news, events, players, clubs, leaders,
   media, affiliations, contacts, siteSettings, ambassadors,
+  featuredBanners, storeProducts,
+  storeOrders, storeOrderItems,
   interschoolYears, schoolStandings, schoolActivations, interschoolNews, subscribers,
   championshipPhases, schoolRegistrations
 } from "@shared/schema";
@@ -53,15 +55,185 @@ function toCamelCase(obj: any): any {
 }
 
 export const storage = {
+  // Featured homepage banners
+  getAllFeaturedBanners: async () => {
+    if (!supabase) throw new Error("Database not available");
+    const { data, error } = await supabase.from("featured_banners").select("*").order("order", { ascending: true });
+    if (error) throw error;
+    return toCamelCase(data) || [];
+  },
+  getActiveFeaturedBanners: async () => {
+    if (!supabase) return [];
+    try {
+      const { data, error } = await supabase
+        .from("featured_banners")
+        .select("*")
+        .eq("is_active", true)
+        .order("order", { ascending: true });
+      if (error) throw error;
+      const now = Date.now();
+      const active = (data || []).filter((banner: any) => {
+        const starts = !banner.start_date || new Date(banner.start_date).getTime() <= now;
+        const ends = !banner.end_date || new Date(banner.end_date).getTime() >= now;
+        return starts && ends;
+      });
+      return toCamelCase(active) || [];
+    } catch (error: any) {
+      console.warn("Featured banners table unavailable:", error.message);
+      return [];
+    }
+  },
+  createFeaturedBanner: async (banner: any) => {
+    if (!supabase) throw new Error("Database not available");
+    const { data, error } = await supabase.from("featured_banners").insert(toSnakeCase(banner)).select().single();
+    if (error) throw error;
+    return toCamelCase(data);
+  },
+  updateFeaturedBanner: async (id: number, banner: any) => {
+    if (!supabase) throw new Error("Database not available");
+    const { data, error } = await supabase.from("featured_banners").update(toSnakeCase(banner)).eq("id", id).select().single();
+    if (error) throw error;
+    return toCamelCase(data);
+  },
+  deleteFeaturedBanner: async (id: number) => {
+    if (!supabase) throw new Error("Database not available");
+    const { error } = await supabase.from("featured_banners").delete().eq("id", id);
+    if (error) throw error;
+  },
+  // Store products
+  getAllStoreProducts: async (activeOnly = false) => {
+    if (!supabase) return [];
+    try {
+      let query = supabase.from("store_products").select("*").order("order", { ascending: true });
+      if (activeOnly) query = query.eq("is_active", true);
+      const { data, error } = await query;
+      if (error) throw error;
+      return toCamelCase(data) || [];
+    } catch (error: any) {
+      console.warn("Store products table unavailable:", error.message);
+      return [];
+    }
+  },
+  createStoreProduct: async (product: any) => {
+    if (!supabase) throw new Error("Database not available");
+    const { data, error } = await supabase.from("store_products").insert(toSnakeCase(product)).select().single();
+    if (error) throw error;
+    return toCamelCase(data);
+  },
+  updateStoreProduct: async (id: number, product: any) => {
+    if (!supabase) throw new Error("Database not available");
+    const { data, error } = await supabase.from("store_products").update(toSnakeCase(product)).eq("id", id).select().single();
+    if (error) throw error;
+    return toCamelCase(data);
+  },
+  deleteStoreProduct: async (id: number) => {
+    if (!supabase) throw new Error("Database not available");
+    const { error } = await supabase.from("store_products").delete().eq("id", id);
+    if (!error) return { archived: false };
+    if (error.code !== "23503") throw error;
+    const { error: archiveError } = await supabase
+      .from("store_products")
+      .update({ is_active: false })
+      .eq("id", id);
+    if (archiveError) throw archiveError;
+    return { archived: true };
+  },
+  deleteStoreOrder: async (id: number) => {
+    if (!supabase) throw new Error("Database not available");
+    const { error: itemError } = await supabase.from("store_order_items").delete().eq("order_id", id);
+    if (itemError) throw itemError;
+    const { error } = await supabase.from("store_orders").delete().eq("id", id);
+    if (error) throw error;
+  },
+  deleteAllStoreOrders: async () => {
+    if (!supabase) throw new Error("Database not available");
+    const { error: itemError } = await supabase.from("store_order_items").delete().not("id", "is", null);
+    if (itemError) throw itemError;
+    const { error } = await supabase.from("store_orders").delete().not("id", "is", null);
+    if (error) throw error;
+  },
+  createStoreOrder: async (order: any, items: any[]) => {
+    if (!supabase) throw new Error("Database not available");
+    const { data, error } = await supabase
+      .from("store_orders")
+      .insert(toSnakeCase(order))
+      .select()
+      .single();
+    if (error) throw error;
+    const created = toCamelCase(data);
+    const { error: itemError } = await supabase
+      .from("store_order_items")
+      .insert(items.map((item) => ({ ...toSnakeCase(item), order_id: created.id })));
+    if (itemError) {
+      await supabase.from("store_orders").delete().eq("id", created.id);
+      throw itemError;
+    }
+    return created;
+  },
+  getStoreOrderById: async (id: number) => {
+    if (!supabase) return undefined;
+    const { data, error } = await supabase.from("store_orders").select("*").eq("id", id).maybeSingle();
+    if (error) throw error;
+    return toCamelCase(data) || undefined;
+  },
+  getStoreOrderByNumber: async (orderNumber: string) => {
+    if (!supabase) return undefined;
+    const { data, error } = await supabase.from("store_orders").select("*").eq("order_number", orderNumber).maybeSingle();
+    if (error) throw error;
+    return toCamelCase(data) || undefined;
+  },
+  getAllStoreOrders: async () => {
+    if (!supabase) return [];
+    const { data, error } = await supabase.from("store_orders").select("*").order("created_at", { ascending: false });
+    if (error) throw error;
+    return toCamelCase(data) || [];
+  },
+  updateStoreOrder: async (id: number, update: Record<string, unknown>) => {
+    if (!supabase) throw new Error("Database not available");
+    const { data, error } = await supabase
+      .from("store_orders")
+      .update({ ...toSnakeCase(update), updated_at: new Date().toISOString() })
+      .eq("id", id)
+      .select()
+      .single();
+    if (error) throw error;
+    return toCamelCase(data);
+  },
+  getStoreOrderItems: async (orderId: number) => {
+    if (!supabase) return [];
+    const { data, error } = await supabase.from("store_order_items").select("*").eq("order_id", orderId);
+    if (error) throw error;
+    return toCamelCase(data) || [];
+  },
   // Admin methods
   getAdminByEmail: async (email: string) => {
     if (!supabase) return undefined;
     try {
-      const { data, error } = await supabase.from('admins').select('*').eq('email', email).maybeSingle();
-      if (error) throw error;
-      return toCamelCase(data) || undefined;
+      const normalizedEmail = email.trim().toLowerCase();
+      const { data, error } = await supabase
+        .from('admins')
+        .select('id,name,email,password_hash,role,protected,created_at');
+      if (error) {
+        console.error('Admin email lookup failed:', {
+          message: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint,
+        });
+        throw error;
+      }
+      const match = (data || []).find((admin: any) =>
+        typeof admin.email === "string" && admin.email.trim().toLowerCase() === normalizedEmail
+      );
+      console.log("Admin authorization lookup:", {
+        requestedEmail: normalizedEmail,
+        rowCount: data?.length || 0,
+        emails: (data || []).map((admin: any) => admin.email).filter(Boolean),
+        matched: Boolean(match),
+      });
+      return toCamelCase(match) || undefined;
     } catch (error: any) {
-      console.error('Error getting admin by email:', error.message);
+      console.error('Error getting admin by email:', error.message, { email });
       return undefined;
     }
   },
@@ -425,8 +597,9 @@ export const storage = {
 
   // Contacts
   getAllContacts: async () => {
-    if (!supabase) return [];
-    const { data } = await supabase.from('contacts').select('*').order('created_at', { ascending: false });
+    if (!supabase) throw new Error('Database not available');
+    const { data, error } = await supabase.from('contacts').select('*').order('created_at', { ascending: false });
+    if (error) throw error;
     return toCamelCase(data) || [];
   },
 
@@ -887,17 +1060,12 @@ export const storage = {
 
   // Subscribers (Newsletter)
   getAllSubscribers: async () => {
-    if (!supabase) return [];
-    try {
-      const { data, error } = await supabase.from('subscribers')
-        .select('*')
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      return toCamelCase(data) || [];
-    } catch (error: any) {
-      console.error('Error fetching subscribers:', error.message);
-      return [];
-    }
+    if (!supabase) throw new Error('Database not available');
+    const { data, error } = await supabase.from('subscribers')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return toCamelCase(data) || [];
   },
   createSubscriber: async (subscriber: InsertSubscriber) => {
     if (!supabase) throw new Error('Database not available');

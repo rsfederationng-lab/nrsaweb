@@ -93,6 +93,9 @@ export default function AdminManagement() {
         body: JSON.stringify(form),
       });
       const savedAdmin = await res.json();
+      if (!res.ok) {
+        throw new Error(savedAdmin.error || "Failed to create admin.");
+      }
       setAdmins(items => [savedAdmin, ...items]);
       toast({
         title: "Admin Created",

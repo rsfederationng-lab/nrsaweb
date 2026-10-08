@@ -26,16 +26,22 @@ export default function AdminContacts() {
   const { toast } = useToast();
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
 
   const fetchContacts = async () => {
     try {
       const res = await apiRequest("GET", "/api/contacts");
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({}));
+        throw new Error(error.error || `Unable to load messages (${res.status})`);
+      }
       const data = await res.json();
       setContacts(data);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to fetch contacts:", error);
+      setLoadError(error.message || "Unable to load contact messages.");
     } finally {
       setLoading(false);
     }
@@ -114,6 +120,12 @@ export default function AdminContacts() {
         <Card>
           <CardContent className="py-12 text-center">
             <p className="text-muted-foreground">Loading messages...</p>
+          </CardContent>
+        </Card>
+      ) : loadError ? (
+        <Card>
+          <CardContent className="py-12 text-center text-destructive">
+            {loadError}
           </CardContent>
         </Card>
       ) : contacts.length === 0 ? (

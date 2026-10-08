@@ -332,6 +332,106 @@ export const insertSiteSettingSchema = createInsertSchema(siteSettings).omit({
 export type InsertSiteSetting = z.infer<typeof insertSiteSettingSchema>;
 export type SiteSetting = typeof siteSettings.$inferSelect;
 
+// Featured Homepage Banners
+export const featuredBanners = pgTable("featured_banners", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  subtitle: text("subtitle").notNull(),
+  badgeText: text("badge_text").notNull().default("FEATURED EVENT"),
+  primaryButtonText: text("primary_button_text").notNull(),
+  primaryButtonLink: text("primary_button_link").notNull(),
+  secondaryButtonText: text("secondary_button_text"),
+  secondaryButtonLink: text("secondary_button_link"),
+  backgroundStyle: text("background_style").notNull().default("red"),
+  imageUrl: text("image_url"),
+  isActive: boolean("is_active").notNull().default(false),
+  order: integer("order").notNull().default(0),
+  startDate: timestamp("start_date"),
+  endDate: timestamp("end_date"),
+  displayFrequency: text("display_frequency").notNull().default("every_visit"),
+  isEmergency: boolean("is_emergency").notNull().default(false),
+  showCountdown: boolean("show_countdown").notNull().default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertFeaturedBannerSchema = createInsertSchema(featuredBanners, {
+  backgroundStyle: z.enum(["red", "green", "custom"]).default("red"),
+  order: z.coerce.number().int().nonnegative(),
+  startDate: z.union([z.date(), z.string().transform((value) => new Date(value))]).nullable().optional(),
+  endDate: z.union([z.date(), z.string().transform((value) => new Date(value))]).nullable().optional(),
+  displayFrequency: z.enum(["every_visit", "once", "twice", "weekly"]).default("every_visit"),
+  isEmergency: z.boolean().default(false),
+  showCountdown: z.boolean().default(false),
+}).omit({ id: true, createdAt: true });
+
+export type InsertFeaturedBanner = z.infer<typeof insertFeaturedBannerSchema>;
+export type FeaturedBanner = typeof featuredBanners.$inferSelect;
+
+// Store Products (foundation for merchandise and pre-orders)
+export const storeProducts = pgTable("store_products", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  price: integer("price").notNull().default(0),
+  imageUrl: text("image_url"),
+  description: text("description"),
+  isPreorder: boolean("is_preorder").notNull().default(false),
+  isActive: boolean("is_active").notNull().default(false),
+  order: integer("order").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertStoreProductSchema = createInsertSchema(storeProducts, {
+  price: z.coerce.number().int().nonnegative(),
+  order: z.coerce.number().int().nonnegative(),
+}).omit({ id: true, createdAt: true });
+
+export type InsertStoreProduct = z.infer<typeof insertStoreProductSchema>;
+export type StoreProduct = typeof storeProducts.$inferSelect;
+
+// NRSA Store orders and line items
+export const storeOrders = pgTable("store_orders", {
+  id: serial("id").primaryKey(),
+  orderNumber: text("order_number").notNull().unique(),
+  customerName: text("customer_name").notNull(),
+  customerEmail: text("customer_email").notNull(),
+  customerPhone: text("customer_phone").notNull(),
+  deliveryAddress: text("delivery_address"),
+  fulfillmentMethod: text("fulfillment_method").notNull().default("pickup"),
+  amount: integer("amount").notNull(),
+  currency: text("currency").notNull().default("NGN"),
+  paymentStatus: text("payment_status").notNull().default("pending"),
+  fulfillmentStatus: text("fulfillment_status").notNull().default("pending"),
+  paystackReference: text("paystack_reference").unique(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const storeOrderItems = pgTable("store_order_items", {
+  id: serial("id").primaryKey(),
+  orderId: integer("order_id").notNull(),
+  productId: integer("product_id").notNull(),
+  productName: text("product_name").notNull(),
+  unitPrice: integer("unit_price").notNull(),
+  quantity: integer("quantity").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertStoreOrderSchema = z.object({
+  customerName: z.string().trim().min(2).max(160),
+  customerEmail: z.string().trim().email(),
+  customerPhone: z.string().trim().min(7).max(30),
+  deliveryAddress: z.string().trim().max(500).optional().nullable(),
+  fulfillmentMethod: z.enum(["pickup", "delivery"]).default("pickup"),
+  items: z.array(z.object({
+    productId: z.coerce.number().int().positive(),
+    quantity: z.coerce.number().int().positive().max(100),
+  })).min(1).max(50),
+});
+
+export type InsertStoreOrder = z.infer<typeof insertStoreOrderSchema>;
+export type StoreOrder = typeof storeOrders.$inferSelect;
+export type StoreOrderItem = typeof storeOrderItems.$inferSelect;
+
 // Ambassadors
 export const ambassadors = pgTable("ambassadors", {
   id: serial("id").primaryKey(),

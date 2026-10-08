@@ -9,7 +9,7 @@ import { format } from "date-fns";
 export default function AdminSubscribers() {
   const [search, setSearch] = useState("");
 
-  const { data: subscribers, isLoading } = useQuery<Subscriber[]>({
+  const { data: subscribers, isLoading, isError, error } = useQuery<Subscriber[]>({
     queryKey: ["/api/subscribers"],
   });
 
@@ -43,6 +43,14 @@ export default function AdminSubscribers() {
     return (
       <div className="flex justify-center items-center h-64">
         <Loader2 className="h-8 w-8 animate-spin text-[#009739]" />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="py-12 text-center text-destructive">
+        Unable to load subscribers: {(error as Error).message}
       </div>
     );
   }

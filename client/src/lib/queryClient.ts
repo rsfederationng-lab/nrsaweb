@@ -17,6 +17,16 @@ function getAuthHeaders(): Record<string, string> {
   return headers;
 }
 
+function handleAuthError(res: Response) {
+  if (res.status === 401) {
+    localStorage.removeItem("adminToken");
+    localStorage.removeItem("admin");
+    if (window.location.pathname.startsWith("/admin")) {
+      window.location.assign("/admin/login");
+    }
+  }
+}
+
 export async function apiRequest(
   method: string,
   url: string,
@@ -35,9 +45,10 @@ export async function apiRequest(
     headers,
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
-    cache: "no-store", // Prevent browser caching of API requests
+    cache: "no-store",
   });
 
+  if (!res.ok) handleAuthError(res);
   return res;
 }
 
@@ -65,9 +76,22 @@ const defaultQueryFn = async ({ queryKey }: { queryKey: readonly unknown[] }): P
   });
   if (!res.ok) {
     if (res.status === 401 || res.status === 403) {
-      // Optional: redirect to login or handle auth error
+      if (res.status === 401) {
+        localStorage.removeItem("adminToken");
+        localStorage.removeItem("admin");
+        if (window.location.pathname.startsWith("/admin-nrsa-dashboard")) {
+          window.location.assign("/admin/login");
+        }
+      }
     }
-    throw new Error(`${res.status}: ${res.statusText}`);
+    let message = `${res.status}: ${res.statusText}`;
+    try {
+      const body = await res.clone().json();
+      if (body?.error) message = body.error;
+    } catch {
+      // Keep the HTTP status when the response is not JSON.
+    }
+    throw new Error(message);
   }
   return res.json();
 };

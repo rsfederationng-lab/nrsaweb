@@ -1,12 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { supabase } from "./lib/supabase.js";
-
-const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-change-in-production";
-
-interface JwtPayload {
-  adminId: number;
-  role?: string;
-}
+import { storage } from "./storage.js";
 
 export interface AdminRequest extends Request {
   adminId?: number;
@@ -16,31 +10,45 @@ export interface AdminRequest extends Request {
 export const requireAdmin = async (
   req: AdminRequest,
   res: Response,
-  next: NextFunction
-) => {
-  // Always allow in development - explicitly set only required properties
-  const adminId = 1;
-  const adminRole = 'admin';
-  
-  req.adminId = adminId;
-  req.adminRole = adminRole;
-  next();
-};
+  next: NextFunction,
+) => authenticateAdmin(req, res, next, false);
 
 export const requireSuperAdmin = async (
   req: AdminRequest,
   res: Response,
-  next: NextFunction
-) => {
+  next: NextFunction,
+) => authenticateAdmin(req, res, next, true);
+
+async function authenticateAdmin(
+  req: AdminRequest,
+  res: Response,
+  next: NextFunction,
+  superAdminOnly: boolean,
+) {
+  const authorization = req.headers.authorization;
+  const token = authorization?.startsWith("Bearer ")
+    ? authorization.slice("Bearer ".length).trim()
+    : "";
+
+  if (!token) return res.status(401).json({ error: "Authentication required" });
+  if (!supabase) return res.status(503).json({ error: "Authentication service unavailable" });
+
   try {
-    const adminId = 1;
-    const adminRole = 'super-admin';
-    
-    req.adminId = adminId;
-    req.adminRole = adminRole;
-    next();
+    const { data, error } = await supabase.auth.getUser(token);
+    if (error || !data.user?.email) {
+      return res.status(401).json({ error: "Invalid authentication token" });
+    }
+
+    const admin = await storage.getAdminByEmail(data.user.email);
+    if (!admin || (superAdminOnly && admin.role !== "super-admin")) {
+      return res.status(403).json({ error: "Insufficient permissions" });
+    }
+
+    req.adminId = admin.id;
+    req.adminRole = admin.role;
+    return next();
   } catch (error: any) {
-    console.error('Super admin middleware error:', error.message);
-    return res.status(500).json({ error: 'Internal server error' });
+    console.error("Admin authentication error:", error.message);
+    return res.status(401).json({ error: "Authentication failed" });
   }
-};
+}

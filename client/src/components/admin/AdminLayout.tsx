@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 import { Link, useLocation } from "wouter";
 import { useEffect, useState } from "react";
 import {
@@ -16,6 +16,7 @@ import {
   ShieldCheck,
   Menu,
   Handshake
+  ,Megaphone, ShoppingBag
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -36,6 +37,24 @@ interface AdminLayoutProps {
 export function AdminLayout({ children }: AdminLayoutProps) {
   const [location] = useLocation();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const content = contentRef.current;
+    if (!content) return;
+
+    const savedPosition = sessionStorage.getItem(`nrsa-admin-scroll:${location}`);
+    content.scrollTop = savedPosition ? Number(savedPosition) : 0;
+
+    const savePosition = () => {
+      sessionStorage.setItem(`nrsa-admin-scroll:${location}`, String(content.scrollTop));
+    };
+    content.addEventListener("scroll", savePosition, { passive: true });
+    return () => {
+      savePosition();
+      content.removeEventListener("scroll", savePosition);
+    };
+  }, [location]);
 
   // JWT Authentication Check
   useEffect(() => {
@@ -54,6 +73,9 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const navItems = [
     { label: "Dashboard", path: "/admin-nrsa-dashboard", icon: LayoutDashboard },
     { label: "Hero Slides", path: "/admin-nrsa-dashboard/hero-slides", icon: HomeIcon },
+    { label: "Featured Banners", path: "/admin-nrsa-dashboard/featured-banners", icon: Megaphone },
+    { label: "Store Products", path: "/admin-nrsa-dashboard/store-products", icon: ShoppingBag },
+    { label: "Store Orders", path: "/admin-nrsa-dashboard/store-orders", icon: ShoppingBag },
     { label: "News", path: "/admin-nrsa-dashboard/news", icon: Newspaper },
     { label: "Events", path: "/admin-nrsa-dashboard/events", icon: Calendar },
     { label: "Interschool", path: "/admin-nrsa-dashboard/interschool", icon: Trophy },
@@ -159,7 +181,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         </header>
 
         {/* Page Content */}
-        <div className="flex-1 overflow-y-auto p-4 md:p-8">
+        <div ref={contentRef} className="flex-1 overflow-y-auto p-4 md:p-8">
           {children}
         </div>
       </main>

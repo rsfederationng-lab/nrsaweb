@@ -1,4 +1,4 @@
-import { defineConfig } from "vite";
+import { defineConfig, type UserConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -6,7 +6,7 @@ import Sitemap from "vite-plugin-sitemap";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-export default defineConfig(() => {
+export default defineConfig((): UserConfig => {
   return {
     plugins: [
       react({ jsxRuntime: "automatic" }),

@@ -58,6 +58,9 @@ export default function AdminLogin() {
       }
       
       const data = await res.json();
+      if (!data.token || !data.admin) {
+        throw new Error("Login succeeded but the admin session was not issued. Please try again.");
+      }
       localStorage.setItem("adminToken", data.token);
       localStorage.setItem("admin", JSON.stringify(data.admin));
       window.location.href = "/admin-nrsa-dashboard";

@@ -1,6 +1,7 @@
 import { Express } from "express";
 import { supabase } from "./lib/supabase";
 import { storage } from "./storage";
+import { isNrsaEmail } from "./emailPolicy.js";
 
 export function registerAuthRoutes(app: Express) {
   // Validate Supabase client initialization
@@ -24,6 +25,9 @@ export function registerAuthRoutes(app: Express) {
     }
     
     const { email, password } = req.body;
+    if (!isNrsaEmail(email)) {
+      return res.status(403).json({ error: "Only @nrsa.com.ng email accounts can access the admin portal." });
+    }
     
     try {
       console.log("Attempting Supabase auth with:", { email: email?.replace(/[\r\n]/g, ''), password: password ? '[REDACTED]' : 'undefined' });
@@ -47,7 +51,7 @@ export function registerAuthRoutes(app: Express) {
 
       if (!adminData) {
         console.error("Admin record not found for:", data.user.email);
-        return res.status(403).json({ error: "Admin account not found in database" });
+        return res.status(403).json({ error: "This NRSA account is not authorized in the admin database." });
       }
 
       console.log("Login successful, sending JSON response");
@@ -154,11 +158,6 @@ export function registerAuthRoutes(app: Express) {
    * Check if user is logged in (middleware)
    */
   app.get("/api/admin/me", async (req, res) => {
-    // Skip token validation in development
-    if (process.env.NODE_ENV === 'development') {
-      return res.json({ admin: { id: 1, email: 'admin@nrsa.com.ng', role: 'admin' } });
-    }
-    
     const token = req.headers.authorization?.replace('Bearer ', '');
     if (!token) {
       return res.status(401).json({ error: "No token" });
@@ -173,7 +172,9 @@ export function registerAuthRoutes(app: Express) {
       if (error || !data.user) {
         return res.status(401).json({ error: "Invalid token" });
       }
-      res.json({ admin: data.user });
+      const admin = data.user.email ? await storage.getAdminByEmail(data.user.email) : undefined;
+      if (!admin) return res.status(403).json({ error: "Admin account not found" });
+      res.json({ admin: { ...admin, email: data.user.email } });
     } catch (err: any) {
       console.error('Token validation error:', err?.message || err);
       return res.status(401).json({ error: "Token validation failed" });

@@ -50,6 +50,10 @@ import AdminLogin from "@/pages/admin/Login";
 import SiteContentManager from "@/pages/admin/SiteContentManager";
 import AdminAmbassadors from "@/pages/admin/Ambassadors";
 import AdminSubscribers from "@/pages/admin/Subscribers";
+import AdminFeaturedBanners from "@/pages/admin/FeaturedBanners";
+import AdminStoreProducts from "@/pages/admin/StoreProducts";
+import AdminStoreOrders from "@/pages/admin/StoreOrders";
+import Store from "@/pages/Store";
 
 import NotFound from "@/pages/not-found";
 
@@ -59,12 +63,14 @@ function PageWithLayout({ children }: { children: React.ReactNode }) {
       <Navbar />
       <main className="flex-1">{children}</main>
       <Footer />
+      <NRSABotWidget />
     </div>
   );
 }
 
 import ScrollToTop from "@/components/ScrollToTop";
 import { NRSABotWidget } from "@/components/NRSABotWidget";
+import { CookieConsent } from "@/components/CookieConsent";
 
 export default function App() {
   return (
@@ -72,7 +78,6 @@ export default function App() {
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <ScrollToTop />
-          <NRSABotWidget />
           <Switch>
 
             {/* Admin Routes */}
@@ -129,6 +134,15 @@ export default function App() {
             <Route path="/admin-nrsa-dashboard/subscribers">
               <AdminLayout><AdminSubscribers /></AdminLayout>
             </Route>
+            <Route path="/admin-nrsa-dashboard/featured-banners">
+              <AdminLayout><AdminFeaturedBanners /></AdminLayout>
+            </Route>
+            <Route path="/admin-nrsa-dashboard/store-products">
+              <AdminLayout><AdminStoreProducts /></AdminLayout>
+            </Route>
+            <Route path="/admin-nrsa-dashboard/store-orders">
+              <AdminLayout><AdminStoreOrders /></AdminLayout>
+            </Route>
 
             {/* Public Routes */}
             <Route path="/">
@@ -147,6 +161,12 @@ export default function App() {
             </Route>
             <Route path="/partnership">
               <PageWithLayout><Partnership /></PageWithLayout>
+            </Route>
+            <Route path="/store">
+              <PageWithLayout><Store /></PageWithLayout>
+            </Route>
+            <Route path="/store/checkout">
+              <PageWithLayout><Store /></PageWithLayout>
             </Route>
             <Route path="/competitions"> {/* added route right after /about */}
               <PageWithLayout><Competitions /></PageWithLayout>
@@ -214,6 +234,7 @@ export default function App() {
 
           </Switch>
           <Toaster />
+          <CookieConsent />
         </TooltipProvider>
       </QueryClientProvider>
     </HelmetProvider>

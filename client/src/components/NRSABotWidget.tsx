@@ -28,10 +28,14 @@ export function NRSABotWidget() {
                 // Send full conversation history so the AI remembers context
                 history: messages.slice(0, -1), // exclude the user message we just added
             });
-            return res.json();
+            const data = await res.json();
+            if (!res.ok || typeof data.reply !== "string") {
+                throw new Error(typeof data.error === "string" ? data.error : "The assistant is temporarily unavailable.");
+            }
+            return data as { reply: string };
         },
         onSuccess: (data) => {
-            setMessages(prev => [...prev, { role: 'assistant', content: data.reply }]);
+            setMessages(prev => [...prev, { role: 'assistant', content: data.reply || 'Sorry, I could not generate a response.' }]);
         },
         onError: () => {
             setMessages(prev => [...prev, { role: 'assistant', content: 'Sorry, I encountered an error. Please try again later.' }]);
@@ -130,7 +134,7 @@ export function NRSABotWidget() {
                                                 : "bg-white border border-gray-200 text-gray-800 rounded-bl-none shadow-sm"
                                                 }`}>
                                                 {msg.role === 'assistant'
-                                                  ? msg.content.split(/(https?:\/\/[^\s]+)/g).map((part, i) =>
+                                                  ? (msg.content || 'Sorry, I could not generate a response.').split(/(https?:\/\/[^\s]+)/g).map((part, i) =>
                                                       /^https?:\/\//.test(part) ? (
                                                         <a
                                                           key={i}

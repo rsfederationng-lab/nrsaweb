@@ -1,3 +1,4 @@
+import "../config.js";
 import { createClient } from '@supabase/supabase-js';
 import jwt from 'jsonwebtoken';
 import fs from 'fs';

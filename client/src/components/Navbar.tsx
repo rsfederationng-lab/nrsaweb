@@ -188,6 +188,9 @@ export function Navbar() {
                                         <ListItem href="/partnership" title="Sponsorship">
                                             Partner with us to grow the sport.
                                         </ListItem>
+                                        <ListItem href="/store" title="Official Merchandise">
+                                            Shop NRSA merchandise and pre-orders.
+                                        </ListItem>
                                         <ListItem href="https://ambassadors.nrsa.com.ng" title="Ambassadors" target="_blank" rel="noopener noreferrer">
                                             Meet our featured athletes.
                                         </ListItem>
@@ -269,6 +272,7 @@ export function Navbar() {
                                     <MobileLink href="/contact?subject=Registration&message=I would like to register as a..." onClick={() => setIsOpen(false)}>Register</MobileLink>
                                     <MobileLink href="/contact?subject=Volunteer&message=I am interested in volunteering for..." onClick={() => setIsOpen(false)}>Volunteer</MobileLink>
                                     <MobileLink href="/partnership" onClick={() => setIsOpen(false)}>Sponsorship</MobileLink>
+                                    <MobileLink href="/store" onClick={() => setIsOpen(false)}>Official Merchandise</MobileLink>
                                     <a href="https://ambassadors.nrsa.com.ng" target="_blank" rel="noopener noreferrer" className="block py-2 text-base text-muted-foreground hover:text-primary transition-colors" onClick={() => setIsOpen(false)}>Ambassadors</a>
                                 </AccordionContent>
                             </AccordionItem>

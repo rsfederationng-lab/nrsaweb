@@ -26,6 +26,8 @@ app.use(
   })
 );
 app.options("*", cors());
+// Preserve the exact Paystack payload for HMAC signature verification.
+app.use("/api/store/paystack/webhook", express.raw({ type: "application/json", limit: "1mb" }));
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(compression());
@@ -112,6 +114,13 @@ const PORT = parseInt(process.env.PORT || "5000");
 
 (async () => {
   try {
+    if (
+      process.env.NODE_ENV === "production" &&
+      (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY)
+    ) {
+      throw new Error("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required in production");
+    }
+
     await createTables();
 
     if (process.env.NODE_ENV === "development") {

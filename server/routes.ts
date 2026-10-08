@@ -1,11 +1,12 @@
 ﻿import { Express } from "express";
+import crypto from "crypto";
 import { storage } from "./storage.js";
 import { supabase } from "./lib/supabase.js";
 import { requireAdmin, requireSuperAdmin, type AdminRequest } from "./authMiddleware.js";
 import bcrypt from "bcrypt";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { sendContactEmails, verifyEmailConnection, sendNewsletterWelcome, sendSchoolRegistrationConfirmation, sendAdminSchoolRegistrationNotification, sendSchoolSelectionEmail } from "./mail.js";
-import { Express } from "express";
+import { sendContactEmails, verifyEmailConnection, sendNewsletterWelcome, sendSchoolRegistrationConfirmation, sendAdminSchoolRegistrationNotification, sendSchoolSelectionEmail, sendSchoolRegistrationStatusEmail, sendStoreOrderEmails, sendStoreFulfillmentUpdate } from "./mail.js";
+import { isNrsaEmail } from "./emailPolicy.js";
 
 import {
   insertHeroSlideSchema,
@@ -18,6 +19,9 @@ import {
   insertContactSchema,
   insertMemberStateSchema,
   insertSiteSettingSchema,
+  insertFeaturedBannerSchema,
+  insertStoreProductSchema,
+  insertStoreOrderSchema,
   insertAffiliationSchema,
   insertAmbassadorSchema,
   insertInterschoolYearSchema,
@@ -49,6 +53,247 @@ export function registerAllRoutes(app: Express): void {
       const slides = await storage.getAllHeroSlides();
       res.json(slides);
     } catch (e: any) { res.status(500).json({ error: e.message }); }
+  });
+
+  // ---------- FEATURED BANNERS ----------
+  app.get("/api/featured-banners/active", async (_req, res) => {
+    try {
+      res.json(await storage.getActiveFeaturedBanners());
+    } catch (e: any) {
+      console.error("Active featured banner error:", e.message);
+      res.json([]);
+    }
+  });
+
+  app.get("/api/featured-banners", requireAdmin, async (_req, res) => {
+    try { res.json(await storage.getAllFeaturedBanners()); }
+    catch (e: any) { res.status(500).json({ error: e.message }); }
+  });
+
+  app.post("/api/featured-banners", requireAdmin, async (req, res) => {
+    try {
+      const banner = await storage.createFeaturedBanner(insertFeaturedBannerSchema.parse(req.body));
+      res.status(201).json(banner);
+    } catch (e: any) { res.status(400).json({ error: e.message }); }
+  });
+
+  app.patch("/api/featured-banners/:id", requireAdmin, async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      if (!Number.isInteger(id)) return res.status(400).json({ error: "Invalid ID" });
+      const banner = await storage.updateFeaturedBanner(id, insertFeaturedBannerSchema.partial().parse(req.body));
+      res.json(banner);
+    } catch (e: any) { res.status(400).json({ error: e.message }); }
+  });
+
+  app.delete("/api/featured-banners/:id", requireAdmin, async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      if (!Number.isInteger(id)) return res.status(400).json({ error: "Invalid ID" });
+      await storage.deleteFeaturedBanner(id);
+      res.status(204).send();
+    } catch (e: any) { res.status(500).json({ error: e.message }); }
+  });
+
+  // ---------- STORE PRODUCTS ----------
+  app.get("/api/store-products", async (_req, res) => {
+    try { res.json(await storage.getAllStoreProducts(true)); }
+    catch (e: any) { console.error("Public store products error:", e.message); res.json([]); }
+  });
+
+  app.get("/api/admin/store-products", requireAdmin, async (_req, res) => {
+    try { res.json(await storage.getAllStoreProducts()); }
+    catch (e: any) { res.status(500).json({ error: e.message }); }
+  });
+
+  app.post("/api/store-products", requireAdmin, async (req, res) => {
+    try {
+      const product = await storage.createStoreProduct(insertStoreProductSchema.parse(req.body));
+      res.status(201).json(product);
+    } catch (e: any) { res.status(400).json({ error: e.message }); }
+  });
+
+  app.patch("/api/store-products/:id", requireAdmin, async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      if (!Number.isInteger(id)) return res.status(400).json({ error: "Invalid ID" });
+      res.json(await storage.updateStoreProduct(id, insertStoreProductSchema.partial().parse(req.body)));
+    } catch (e: any) { res.status(400).json({ error: e.message }); }
+  });
+
+  app.delete("/api/store-products/:id", requireAdmin, async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      if (!Number.isInteger(id)) return res.status(400).json({ error: "Invalid ID" });
+      const result = await storage.deleteStoreProduct(id);
+      res.status(200).json(result);
+    } catch (e: any) { res.status(500).json({ error: e.message }); }
+  });
+
+  // ---------- STORE ORDERS / PAYSTACK ----------
+  app.post("/api/store/orders", async (req, res) => {
+    try {
+      const input = insertStoreOrderSchema.parse(req.body);
+      const requested = new Map<number, number>();
+      for (const item of input.items) requested.set(item.productId, (requested.get(item.productId) || 0) + item.quantity);
+      const products = await storage.getAllStoreProducts(true);
+      const selected = products.filter((product: any) => requested.has(product.id));
+      if (selected.length !== requested.size) return res.status(400).json({ error: "One or more products are unavailable." });
+
+      const items: Array<{ productId: number; productName: string; unitPrice: number; quantity: number }> = selected.map((product: any) => ({
+        productId: product.id,
+        productName: product.name,
+        unitPrice: product.price,
+        quantity: requested.get(product.id) || 0,
+      }));
+      const amount = items.reduce((total: number, item) => total + item.unitPrice * item.quantity, 0);
+      const orderNumber = `NRSA-STORE-${new Date().getFullYear()}-${crypto.randomBytes(4).toString("hex").toUpperCase()}`;
+      const order = await storage.createStoreOrder({
+        orderNumber,
+        customerName: input.customerName,
+        customerEmail: input.customerEmail,
+        customerPhone: input.customerPhone,
+        deliveryAddress: input.deliveryAddress || null,
+        fulfillmentMethod: input.fulfillmentMethod,
+        amount,
+        currency: "NGN",
+        paymentStatus: "pending",
+        fulfillmentStatus: "pending",
+      }, items);
+
+      const secretKey = process.env.PAYSTACK_SECRET_KEY;
+      if (!secretKey) {
+        await storage.updateStoreOrder(order.id, { paymentStatus: "failed" });
+        return res.status(503).json({ error: "Payments are not configured yet." });
+      }
+      const paystackResponse = await fetch("https://api.paystack.co/transaction/initialize", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${secretKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: input.customerEmail,
+          amount: amount * 100,
+          currency: "NGN",
+          reference: orderNumber,
+          callback_url: `${process.env.NODE_ENV === "production"
+            ? (process.env.PUBLIC_APP_URL || "https://nrsa.com.ng")
+            : `${req.protocol}://${req.get("host")}`}/store`,
+          metadata: {
+            business_unit: "NRSA Store",
+            order_id: orderNumber,
+            customer_phone: input.customerPhone,
+            products: items.map((item: { productName: string; quantity: number }) => ({ name: item.productName, quantity: item.quantity })),
+          },
+        }),
+      });
+      const payload = await paystackResponse.json() as { status?: boolean; message?: string; data?: { authorization_url?: string; access_code?: string; reference?: string } };
+      if (!paystackResponse.ok || !payload.status || !payload.data?.authorization_url) {
+        await storage.updateStoreOrder(order.id, { paymentStatus: "failed" });
+        return res.status(502).json({ error: payload.message || "Unable to initialize payment." });
+      }
+      await storage.updateStoreOrder(order.id, { paystackReference: payload.data.reference || orderNumber });
+      res.status(201).json({ orderNumber, amount, authorizationUrl: payload.data.authorization_url, reference: payload.data.reference || orderNumber });
+    } catch (error: any) {
+      console.error("Store order creation error:", error.message);
+      res.status(400).json({ error: error.message || "Unable to create order." });
+    }
+  });
+
+  const completeStorePayment = async (reference: string) => {
+    const secretKey = process.env.PAYSTACK_SECRET_KEY;
+    if (!secretKey) throw new Error("Payments are not configured.");
+    const response = await fetch(`https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`, {
+      headers: { Authorization: `Bearer ${secretKey}` },
+    });
+    const payload = await response.json() as { status?: boolean; message?: string; data?: { status?: string; reference?: string; amount?: number; currency?: string } };
+    if (!response.ok || !payload.status || payload.data?.status !== "success") throw new Error(payload.message || "Payment has not been completed.");
+    const order = await storage.getStoreOrderByNumber(reference);
+    if (!order) throw new Error("Order not found.");
+    if (payload.data.amount !== order.amount * 100 || payload.data.currency !== order.currency) throw new Error("Payment amount or currency does not match the order.");
+    const wasPaid = order.paymentStatus === "paid";
+    const updated = wasPaid ? order : await storage.updateStoreOrder(order.id, { paymentStatus: "paid", paystackReference: reference });
+    if (!wasPaid) {
+      const items = await storage.getStoreOrderItems(order.id);
+      const emailSent = await sendStoreOrderEmails({ ...updated, items });
+      if (!emailSent) {
+        console.error(`Store order ${order.orderNumber} was paid, but one or more order emails failed.`);
+      }
+    }
+    return updated;
+  };
+
+  app.get("/api/store/orders/:orderNumber/verify", async (req, res) => {
+    try {
+      res.json(await completeStorePayment(String(req.params.orderNumber)));
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || "Payment verification failed." });
+    }
+  });
+
+  app.post("/api/store/paystack/webhook", async (req, res) => {
+    const signature = req.headers["x-paystack-signature"];
+    const secretKey = process.env.PAYSTACK_SECRET_KEY;
+    if (!secretKey || typeof signature !== "string") return res.status(401).send("Unauthorized");
+    const rawBody = Buffer.isBuffer(req.body) ? req.body : Buffer.from(JSON.stringify(req.body));
+    const expected = crypto.createHmac("sha512", secretKey).update(rawBody).digest("hex");
+    const providedSignature = Buffer.from(signature);
+    const expectedSignature = Buffer.from(expected);
+    if (providedSignature.length !== expectedSignature.length || !crypto.timingSafeEqual(providedSignature, expectedSignature)) return res.status(401).send("Invalid signature");
+    try {
+      const event = Buffer.isBuffer(req.body) ? JSON.parse(req.body.toString("utf8")) : req.body;
+      if (event?.event === "charge.success" && event?.data?.reference) await completeStorePayment(event.data.reference);
+      res.sendStatus(200);
+    } catch (error: any) {
+      console.error("Paystack webhook error:", error.message);
+      res.status(500).send("Webhook processing failed");
+    }
+  });
+
+  app.get("/api/admin/store-orders", requireAdmin, async (_req, res) => {
+    try { res.json(await storage.getAllStoreOrders()); }
+    catch (error: any) { res.status(500).json({ error: error.message }); }
+  });
+
+  app.patch("/api/admin/store-orders/:id", requireAdmin, async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      if (!Number.isInteger(id)) return res.status(400).json({ error: "Invalid ID" });
+      const allowed = ["fulfillmentStatus", "paymentStatus"];
+      const update = Object.fromEntries(Object.entries(req.body).filter(([key]) => allowed.includes(key)));
+      const before = await storage.getStoreOrderById(id);
+      const updated = await storage.updateStoreOrder(id, update);
+      if (before && updated.fulfillmentStatus !== before.fulfillmentStatus && updated.customerEmail) {
+        const items = await storage.getStoreOrderItems(updated.id);
+        sendStoreFulfillmentUpdate({
+          orderNumber: updated.orderNumber,
+          customerName: updated.customerName,
+          customerEmail: updated.customerEmail,
+          fulfillmentStatus: updated.fulfillmentStatus,
+          paymentStatus: updated.paymentStatus,
+          fulfillmentMethod: updated.fulfillmentMethod,
+          deliveryAddress: updated.deliveryAddress,
+          amount: updated.amount,
+          currency: updated.currency,
+          items,
+        }).catch((error) => console.error("Store fulfillment email failed:", error));
+      }
+      res.json(updated);
+    } catch (error: any) { res.status(400).json({ error: error.message }); }
+  });
+
+  app.delete("/api/admin/store-orders/:id", requireSuperAdmin, async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      if (!Number.isInteger(id)) return res.status(400).json({ error: "Invalid ID" });
+      await storage.deleteStoreOrder(id);
+      res.status(204).send();
+    } catch (error: any) { res.status(400).json({ error: error.message }); }
+  });
+
+  app.delete("/api/admin/store-orders", requireSuperAdmin, async (_req, res) => {
+    try {
+      await storage.deleteAllStoreOrders();
+      res.status(204).send();
+    } catch (error: any) { res.status(400).json({ error: error.message }); }
   });
 
   app.post("/api/hero-slides", requireAdmin, async (req, res) => {
@@ -563,7 +808,7 @@ export function registerAllRoutes(app: Express): void {
       const id = parseInt(req.params.id);
       if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
       const all = await storage.getAllContacts();
-      const item = all.find((c) => c.id === id);
+      const item = all.find((c: { id?: number }) => c.id === id);
       if (!item) return res.status(404).json({ error: "Contact not found" });
       res.json(item);
     } catch (e: any) {
@@ -681,7 +926,7 @@ export function registerAllRoutes(app: Express): void {
 
       // Need to find the key for this setting ID first since updateSiteSetting expects key
       const settings = await storage.getAllSiteSettings();
-      const existing = settings.find(s => s.id === id);
+      const existing = settings.find((s: { id?: number }) => s.id === id);
 
       if (!existing) return res.status(404).json({ error: "Setting not found" });
 
@@ -1097,15 +1342,15 @@ export function registerAllRoutes(app: Express): void {
       const registration = await storage.updateSchoolRegistration(id, validatedData);
       if (!registration) return res.status(404).json({ error: "Registration not found" });
 
-      // Send an email whenever status changes to selected or not_selected
+      // Notify the submitted coordinator email whenever the registration status changes.
       const newStatus = validatedData.status;
       const prevStatus = existing.status;
-      if (newStatus && newStatus !== prevStatus && (newStatus === "selected" || newStatus === "not_selected")) {
+      if (newStatus && newStatus !== prevStatus && registration.email) {
         // Fetch phase for venue/date details
         const phase = await storage.getChampionshipPhase(registration.phaseId);
         const phaseName = phase?.stateName ? `${phase.stateName} State` : "State";
 
-        sendSchoolSelectionEmail({
+        sendSchoolRegistrationStatusEmail({
           schoolName: registration.schoolName,
           coordinatorName: registration.coordinatorName,
           coordinatorEmail: registration.email,
@@ -1115,8 +1360,11 @@ export function registerAllRoutes(app: Express): void {
           competitionDate: phase?.competitionDate
             ? new Date(phase.competitionDate).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })
             : "To be announced",
+          athleteCount: registration.athleteCount,
+          category: registration.category,
+          status: newStatus,
+          adminNotes: registration.adminNotes,
           whatsappGroupLink: phase?.whatsappGroupLink || undefined,
-          isSelected: newStatus === "selected",
         }).catch((err: any) => console.error("Failed to send selection email:", err));
       }
 
@@ -1208,10 +1456,15 @@ export function registerAllRoutes(app: Express): void {
   });
 
   app.post("/api/admins", requireSuperAdmin, async (req, res) => {
+    let createdAuthUserId: string | undefined;
     try {
-      const { name, email, password, role } = req.body;
+      const { name, password, role } = req.body;
+      const email = typeof req.body.email === "string" ? req.body.email.trim().toLowerCase() : "";
       if (!name || !email || !password) {
         return res.status(400).json({ error: "Missing fields" });
+      }
+      if (!isNrsaEmail(email)) {
+        return res.status(400).json({ error: "Admin email must use the @nrsa.com.ng domain." });
       }
       const existing = await storage.getAdminByEmail(email);
       if (existing) return res.status(409).json({ error: "Admin already exists" });
@@ -1230,12 +1483,21 @@ export function registerAllRoutes(app: Express): void {
       if (authError) {
         return res.status(400).json({ error: `Auth creation failed: ${authError.message}` });
       }
+      createdAuthUserId = authData.user?.id;
 
       // Then create admin record in database
       const passwordHash = await bcrypt.hash(password, 10);
       const admin = await storage.createAdmin({ name, email, passwordHash, role: role || "admin" });
       res.status(201).json({ id: admin.id, name: admin.name, email: admin.email, role: admin.role });
-    } catch (e: any) { res.status(400).json({ error: e.message }); }
+    } catch (e: any) {
+      if (createdAuthUserId && supabase) {
+        const { error: rollbackError } = await supabase.auth.admin.deleteUser(createdAuthUserId);
+        if (rollbackError) {
+          console.error("Failed to roll back Auth user after admin creation failure:", rollbackError.message);
+        }
+      }
+      res.status(400).json({ error: e.message });
+    }
   });
 
   app.delete("/api/admins/:id", requireSuperAdmin, async (req, res) => {
@@ -1312,11 +1574,15 @@ export function registerAllRoutes(app: Express): void {
           });
         }
 
-        const upcomingEvents = events.filter((e: any) => new Date(e.date) >= new Date()).slice(0, 5);
+        const upcomingEvents = events
+          .filter((e: any) => e.eventDate && new Date(e.eventDate).getTime() >= Date.now())
+          .slice(0, 5);
         if (upcomingEvents.length > 0) {
           liveContext += "\n\nUPCOMING EVENTS (live from database):\n";
           upcomingEvents.forEach((e: any) => {
-            liveContext += `- "${e.title}" on ${new Date(e.date).toDateString()} at ${e.location || "TBC"}\n`;
+            const eventDate = new Date(e.eventDate);
+            const venue = [e.venue, e.city, e.state].filter(Boolean).join(", ") || "TBC";
+            liveContext += `- "${e.title}" on ${eventDate.toDateString()} at ${venue}\n`;
           });
         }
 
@@ -1357,6 +1623,11 @@ Y-COURT FORMAT:
 
 INTER-SCHOOL (SUB-STANDARD MATCH):
 - Designed for schools to compete regionally using simplified Y-Court rules.
+- The NRSA National Interschool Championship 2026 is currently advertised as registration open.
+- The championship has 3 zones: Delta, Ondo, and Kwara.
+- The homepage registration notice currently says: "20 Days To Go". Do not invent an exact calendar date unless it is present in live database data or confirmed by NRSA.
+- Schools register at https://nrsa.com.ng/interschool/register.
+- Learn more about the championship at https://nrsa.com.ng/interschool.
 - Each team: 7 players, ideally 70/30 gender balance.
 - Secondary Schools: 9 disciplines. Primary Schools: 8 disciplines.
 - Tie-breaker: Last Man Standing (LMS).
